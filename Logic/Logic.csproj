@@ -19,4 +19,20 @@
   <ItemGroup>
     <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="Migrations\Scripts\InitData\CreateImportTables.sql" />
+    <EmbeddedResource Include="Migrations\Scripts\InitData\CreateImportTables.sql" />
+    <None Remove="Migrations\Scripts\InitData\DeleteFeeConfigurationGroups.sql" />
+    <EmbeddedResource Include="Migrations\Scripts\InitData\DeleteFeeConfigurationGroups.sql" />
+    <None Remove="Migrations\Scripts\InitData\DeleteReturnAvailabilities.sql" />
+    <EmbeddedResource Include="Migrations\Scripts\InitData\DeleteReturnAvailabilities.sql" />
+    <None Remove="Migrations\Scripts\InitData\InsertIntoFeeConfigurationGroups.sql" />
+    <EmbeddedResource Include="Migrations\Scripts\InitData\InsertIntoFeeConfigurationGroups.sql" />
+    <None Remove="Migrations\Scripts\InitData\InsertIntoFeeConfigurations.sql" />
+    <EmbeddedResource Include="Migrations\Scripts\InitData\InsertIntoFeeConfigurations.sql" />
+    <None Remove="Migrations\Scripts\InitData\InsertIntoImportTables.sql" />
+    <EmbeddedResource Include="Migrations\Scripts\InitData\InsertIntoImportTables.sql" />
+    <None Remove="Migrations\Scripts\InitData\InsertIntoReturnAvailabilities.sql" />
+    <EmbeddedResource Include="Migrations\Scripts\InitData\InsertIntoReturnAvailabilities.sql" />
+  </ItemGroup>
 </Project>
