@@ -1,5 +1,9 @@
+using System.ComponentModel;
 using System.Reflection;
+using System.Security.Principal;
 using System.Text.Json.Serialization;
+using AutoMapper.Internal;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
@@ -7,6 +11,7 @@ using Microsoft.AspNetCore.OData.Routing.Conventions;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Returns.Api.Documentation;
+using Returns.Api.Mappings;
 using Returns.Api.Utils;
 using Returns.Logic.Utils;
 using Swashbuckle.AspNetCore.SwaggerUI;
@@ -74,11 +79,46 @@ builder.Services
         o.SuppressMapClientErrors = true;
     });
 
-// TODO: add authentication and authorization
+builder.Services.AddAutoMapper(e =>
+{
+    e.AllowNullCollections = true;
+
+    e
+        .Internal()
+        .ForAllPropertyMaps(
+            m =>
+                m.SourceMember is not null &&
+                m.SourceMember
+                    .GetCustomAttributes(inherit: true)
+                    .OfType<ReadOnlyAttribute>()
+                    .Any(a => a.IsReadOnly),
+            (_, mce) => mce.Ignore()
+        );
+
+    e.AddProfile<EntityProfile>();
+});
+
+builder.Services.AddAuthentication(o =>
+{
+    o.DefaultScheme = "mock";
+
+    o.AddScheme<MockAuthenticationHandler>("mock", "mock");
+});
+
+builder.Services.AddAuthorization(o =>
+{
+    o.DefaultPolicy = o.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddServices(builder.Environment, builder.Configuration);
+builder.Services.AddServices(
+    builder.Environment,
+    builder.Configuration,
+    GetPrincipal
+);
 
 if (builder.Environment.IsDevelopment() || builder.Environment.IsStaging())
 {
@@ -164,8 +204,22 @@ app.UseRouting();
 
 app.UseCors();
 
-// TODO: authentication and authorization
+app.UseAuthentication();
+
+app.UseAuthorization();
 
 app.MapControllers();
 
 await app.RunAsync();
+
+static IPrincipal GetPrincipal(IServiceProvider serviceProvider)
+{
+    var context = serviceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext;
+
+    if (context is null)
+    {
+        throw new InvalidOperationException("HTTP context is required.");
+    }
+
+    return context.User;
+}

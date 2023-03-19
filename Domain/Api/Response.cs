@@ -1,8 +1,10 @@
+using JetBrains.Annotations;
+
 namespace Returns.Domain.Api;
 
 public class Response
 {
-    public string? Message { get; set; }
+    [UsedImplicitly] public string? Message { get; init; }
 
-    public IEnumerable<string> MessagesInner { get; set; } = Enumerable.Empty<string>();
+    [UsedImplicitly] public IEnumerable<string> MessagesInner { get; init; } = Enumerable.Empty<string>();
 }

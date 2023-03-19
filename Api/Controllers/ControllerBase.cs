@@ -7,7 +7,7 @@ namespace Returns.Api.Controllers;
 [ApiController]
 [Consumes(MediaTypeNames.Application.Json)]
 [Produces(MediaTypeNames.Application.Json)]
-[Route("api")]
+[Route("api/{companyId}")]
 public abstract class ControllerBase : ODataController
 {
 }

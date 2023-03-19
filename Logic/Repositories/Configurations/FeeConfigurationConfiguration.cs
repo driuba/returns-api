@@ -8,7 +8,16 @@ public class FeeConfigurationConfiguration : EntityTrackableConfiguration<FeeCon
 {
     public override void Configure(EntityTypeBuilder<FeeConfiguration> builder)
     {
-        builder.ToTable("FeeConfigurations");
+        builder.ToTable(
+            "FeeConfigurations",
+            b =>
+            {
+                b.HasCheckConstraint(
+                    "CK_FeeConfigurations_CountryId_CustomerId",
+                    $"[{nameof(FeeConfiguration.CountryId)}] IS NULL OR [{nameof(FeeConfiguration.CustomerId)}] IS NULL"
+                );
+            }
+        );
 
         builder.HasKey(fc => fc.Id);
 
@@ -58,11 +67,6 @@ public class FeeConfigurationConfiguration : EntityTrackableConfiguration<FeeCon
             .HasIndex(fc => new { fc.CountryId, fc.CustomerId, fc.FeeConfigurationGroupId })
             .IsUnique()
             .HasFilter($"[{nameof(FeeConfiguration.Deleted)}] = 0");
-
-        builder.HasCheckConstraint(
-            "CK_FeeConfigurations_CountryId_CustomerId",
-            $"[{nameof(FeeConfiguration.CountryId)}] IS NULL OR [{nameof(FeeConfiguration.CustomerId)}] IS NULL"
-        );
 
         base.Configure(builder);
     }

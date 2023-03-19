@@ -4,8 +4,9 @@ namespace Returns.Domain.Entities;
 
 public class ReturnLine : EntityTrackable
 {
-    public ReturnLine(string productId)
+    public ReturnLine(string invoiceNumberPurchase, string productId)
     {
+        InvoiceNumberPurchase = invoiceNumberPurchase;
         ProductId = productId;
     }
 

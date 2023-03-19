@@ -11,7 +11,7 @@ public class FeeConfigurationGroup : IEntity
         Name = name;
     }
 
-    public string CompanyId { get; }
+    public string CompanyId { get; set; }
 
     public virtual ICollection<FeeConfiguration> Configurations { get; set; } = default!;
 

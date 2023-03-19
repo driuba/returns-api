@@ -1,3 +1,6 @@
+using System.Security.Principal;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,19 +14,24 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddServices(
         this IServiceCollection serviceCollection,
         IHostEnvironment hostEnvironment,
-        IConfiguration configuration
+        IConfiguration configuration,
+        Func<IServiceProvider, IPrincipal> principalFactory
     )
     {
+        serviceCollection.AddLogging();
+
+        serviceCollection.AddScoped(principalFactory);
+
+        serviceCollection.AddSingleton(BuildJsonSerializerOptions);
+
         serviceCollection.AddDbContext<ReturnDbContext>(b =>
         {
             var connectionString = configuration.GetConnectionString("Return");
 
-            if (String.IsNullOrEmpty(connectionString))
+            if (string.IsNullOrEmpty(connectionString))
             {
                 throw new InvalidOperationException("Return connection string is required.");
             }
-
-            b.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 
             b.UseSqlite(
                 Environment.ExpandEnvironmentVariables(connectionString),
@@ -41,8 +49,20 @@ public static class ServiceCollectionExtensions
             }
         });
 
-        serviceCollection.AddLogging();
-
         return serviceCollection;
+    }
+
+    private static JsonSerializerOptions BuildJsonSerializerOptions(IServiceProvider _)
+    {
+        return new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        {
+            Converters =
+            {
+                new JsonStringEnumConverter()
+            },
+            MaxDepth = 32,
+            PropertyNamingPolicy = null,
+            ReferenceHandler = ReferenceHandler.IgnoreCycles
+        };
     }
 }

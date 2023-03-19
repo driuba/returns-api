@@ -17,6 +17,6 @@ public class ReturnDesignTimeDbContextFactory : IDesignTimeDbContextFactory<Retu
             }
         );
 
-        return new ReturnDbContext(builder.Options);
+        return new ReturnDbContext(builder.Options, default!);
     }
 }

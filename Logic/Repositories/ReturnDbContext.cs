@@ -1,13 +1,22 @@
+using System.Security.Principal;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Returns.Domain.Entities;
 using Returns.Logic.Repositories.Configurations;
 
 namespace Returns.Logic.Repositories;
 
-public class ReturnDbContext : DbContext
+public sealed class ReturnDbContext : DbContext
 {
-    public ReturnDbContext(DbContextOptions options) : base(options)
+    private readonly IPrincipal _principal;
+
+    public ReturnDbContext(DbContextOptions options, IPrincipal principal) : base(options)
     {
-        Init();
+        _principal = principal;
+
+        ChangeTracker.LazyLoadingEnabled = false;
+        ChangeTracker.StateChanged += UpdatePropertiesTracking;
+        ChangeTracker.Tracked += UpdatePropertiesTracking;
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -15,6 +24,11 @@ public class ReturnDbContext : DbContext
         configurationBuilder
             .Properties<decimal>()
             .HavePrecision(18, 4);
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -30,8 +44,22 @@ public class ReturnDbContext : DbContext
             .ApplyConfiguration(new ReturnLineDeviceConfiguration());
     }
 
-    private void Init()
+    private void UpdatePropertiesTracking(object? _, EntityEntryEventArgs eventArgs)
     {
-        ChangeTracker.LazyLoadingEnabled = false;
+        if (eventArgs.Entry.Entity is not EntityTrackable entity)
+        {
+            return;
+        }
+
+        if (eventArgs.Entry.State == EntityState.Added)
+        {
+            entity.Modified = DateTime.Now;
+            entity.UserModified = _principal.Identity?.Name ?? "Anonymous";
+        }
+        else if (eventArgs.Entry.State == EntityState.Modified)
+        {
+            entity.Created = DateTime.Now;
+            entity.UserCreated = _principal.Identity?.Name ?? "Anonymous";
+        }
     }
 }
