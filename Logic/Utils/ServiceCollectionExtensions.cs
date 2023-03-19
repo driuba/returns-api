@@ -41,6 +41,8 @@ public static class ServiceCollectionExtensions
             }
         });
 
+        serviceCollection.AddLogging();
+
         return serviceCollection;
     }
 }

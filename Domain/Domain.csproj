@@ -5,4 +5,8 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Returns.Domain</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Logic" />
+    <Folder Include="Services" />
+  </ItemGroup>
 </Project>

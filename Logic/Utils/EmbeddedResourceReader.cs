@@ -9,7 +9,7 @@ internal static class EmbeddedResourceReader
         return ReadAsync(name).Result;
     }
 
-    internal static Task<string> ReadAsync(string name)
+    private static Task<string> ReadAsync(string name)
     {
         var assembly = Assembly.GetExecutingAssembly();
 

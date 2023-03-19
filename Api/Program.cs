@@ -1,9 +1,171 @@
+using System.Reflection;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.OData;
+using Microsoft.AspNetCore.OData.Deltas;
+using Microsoft.AspNetCore.OData.Query;
+using Microsoft.AspNetCore.OData.Routing.Conventions;
+using Microsoft.Net.Http.Headers;
+using Microsoft.OpenApi.Models;
+using Returns.Api.Documentation;
+using Returns.Api.Utils;
 using Returns.Logic.Utils;
+using Swashbuckle.AspNetCore.SwaggerUI;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(o =>
+{
+    o.AddDefaultPolicy(b =>
+    {
+        b
+            .WithHeaders(
+                HeaderNames.Authorization,
+                HeaderNames.ContentType
+            )
+            .WithMethods(
+                HttpMethods.Delete,
+                HttpMethods.Get,
+                HttpMethods.Options,
+                HttpMethods.Patch,
+                HttpMethods.Post,
+                HttpMethods.Put
+            )
+            .WithOrigins(
+                builder.Configuration
+                    .GetSection("CorsOrigins")
+                    .Get<string[]>() ?? Array.Empty<string>()
+            );
+    });
+});
+
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+
+        o.JsonSerializerOptions.PropertyNamingPolicy = null;
+        o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    })
+    .AddOData(o =>
+    {
+        var conventions = o.Conventions
+            .Where(c => c is not AttributeRoutingConvention)
+            .ToList();
+
+        foreach (var convention in conventions)
+        {
+            o.Conventions.Remove(convention);
+        }
+
+        o.EnableNoDollarQueryOptions = false;
+        o.RouteOptions.EnableActionNameCaseInsensitive = true;
+        o.RouteOptions.EnableControllerNameCaseInsensitive = true;
+        o.RouteOptions.EnableKeyAsSegment = false;
+        o.RouteOptions.EnablePropertyNameCaseInsensitive = true;
+
+        o.AddEdm();
+
+        o.EnableQueryFeatures();
+    })
+    .ConfigureApiBehaviorOptions(o =>
+    {
+        o.InvalidModelStateResponseFactory = InvalidModelStateHandler.ResponseFactory;
+        o.SuppressMapClientErrors = true;
+    });
+
+// TODO: add authentication and authorization
+
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddServices(builder.Environment, builder.Configuration);
 
+if (builder.Environment.IsDevelopment() || builder.Environment.IsStaging())
+{
+    builder.Services.AddSwaggerGen(o =>
+    {
+        o.CustomSchemaIds(t => t.ToString());
+
+        o.IncludeXmlComments(
+            Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"),
+            includeControllerXmlComments: true
+        );
+
+        o.SupportNonNullableReferenceTypes();
+
+        o.UseAllOfToExtendReferenceSchemas();
+
+        o.SwaggerDoc(
+            "v1",
+            new OpenApiInfo
+            {
+                Title = "Returns API v1",
+                Version = "v1"
+            }
+        );
+
+        o.OperationFilter<InvalidModelStateFilter>();
+        o.OperationFilter<ODataDeltaFilter>();
+        o.OperationFilter<ODataQueryOptionsFilter>();
+        o.OperationFilter<UnhandledExceptionFilter>();
+        o.OperationFilter<UnresolvedReferenceFilter>();
+
+        o.SchemaFilter<ComponentModelFilter>();
+
+        o.MapType(
+            typeof(ODataQueryOptions<>),
+            () => new OpenApiSchema
+            {
+                UnresolvedReference = true
+            }
+        );
+
+        o.MapType(
+            typeof(Delta<>),
+            () => new OpenApiSchema
+            {
+                UnresolvedReference = true
+            }
+        );
+    });
+}
+
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else if (app.Environment.IsStaging() || app.Environment.IsProduction())
+{
+    app.UseExceptionHandler(b => b.Run(ExceptionHandler.HandleExceptionUnhandledAsync));
+}
+
+app.UseHttpsRedirection();
+
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
+{
+    app.UseSwagger();
+
+    app.UseSwaggerUI(o =>
+    {
+        o.DocExpansion(DocExpansion.None);
+
+        o.SwaggerEndpoint("/swagger/v1/swagger.json", "Returns API v1");
+    });
+}
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseODataRouteDebug();
+}
+
+app.UseRouting();
+
+app.UseCors();
+
+// TODO: authentication and authorization
+
+app.MapControllers();
 
 await app.RunAsync();
