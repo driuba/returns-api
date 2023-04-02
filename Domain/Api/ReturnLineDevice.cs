@@ -2,7 +2,7 @@
 
 namespace Returns.Domain.Api;
 
-public class ReturnLineDevice : TrackableBase
+public sealed class ReturnLineDevice : TrackableBase
 {
     public ReturnLineDevice(string serialNumber)
     {
@@ -11,7 +11,7 @@ public class ReturnLineDevice : TrackableBase
 
     [ReadOnly(true)] public int Id { get; set; }
 
-    [ReadOnly(true)] public virtual ReturnLine Line { get; set; } = default!;
+    [ReadOnly(true)] public ReturnLine Line { get; set; } = default!;
 
     [ReadOnly(true)] public int ReturnLineId { get; set; }
 

@@ -7,8 +7,7 @@ namespace Returns.Logic.Repositories.Configurations;
 
 public class ReturnAvailabilityConfiguration : EntityTypeConfiguration<ReturnAvailability>
 {
-    public ReturnAvailabilityConfiguration(Expression<Func<ReturnAvailability, bool>>? queryFilterExpression)
-        : base(queryFilterExpression)
+    public ReturnAvailabilityConfiguration(Expression<Func<ReturnAvailability, bool>>? queryFilterExpression) : base(queryFilterExpression)
     {
     }
 

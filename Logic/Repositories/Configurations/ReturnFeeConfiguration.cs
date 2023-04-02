@@ -7,8 +7,7 @@ namespace Returns.Logic.Repositories.Configurations;
 
 public class ReturnFeeConfiguration : EntityTrackableConfiguration<ReturnFee>
 {
-    public ReturnFeeConfiguration(Expression<Func<ReturnFee, bool>>? queryFilterExpression)
-        : base(queryFilterExpression)
+    public ReturnFeeConfiguration(Expression<Func<ReturnFee, bool>>? queryFilterExpression) : base(queryFilterExpression)
     {
     }
 

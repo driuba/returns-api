@@ -3,7 +3,7 @@ using Returns.Domain.Enums;
 
 namespace Returns.Domain.Api;
 
-public class FeeConfigurationGroup
+public sealed class FeeConfigurationGroup
 {
     public FeeConfigurationGroup(string companyId, string description, string name)
     {
@@ -14,7 +14,7 @@ public class FeeConfigurationGroup
 
     [ReadOnly(true)] public string CompanyId { get; set; }
 
-    [ReadOnly(true)] public virtual ICollection<FeeConfiguration> Configurations { get; set; } = default!;
+    [ReadOnly(true)] public ICollection<FeeConfiguration> Configurations { get; set; } = default!;
 
     [ReadOnly(true)] public int? DelayDays { get; set; }
 

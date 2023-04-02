@@ -1,5 +1,8 @@
-﻿namespace Returns.Domain.Entities;
+﻿using JetBrains.Annotations;
 
+namespace Returns.Domain.Entities;
+
+[UsedImplicitly]
 public class ReturnLineAttachment : EntityTrackable
 {
     public ReturnLineAttachment(string name, string url)

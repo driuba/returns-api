@@ -12,7 +12,7 @@ internal static class InvalidModelStateHandler
             new Response
             {
                 Message = "One or more validation errors occurred.",
-                MessagesInner = context.ModelState
+                Messages = context.ModelState
                     .Select(kvp => kvp.Value)
                     .Where(mse => mse is not null)
                     .Cast<ModelStateEntry>()

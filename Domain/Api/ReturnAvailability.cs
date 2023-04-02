@@ -2,7 +2,7 @@
 
 namespace Returns.Domain.Api;
 
-public class ReturnAvailability
+public sealed class ReturnAvailability
 {
     public ReturnAvailability(string companyId)
     {

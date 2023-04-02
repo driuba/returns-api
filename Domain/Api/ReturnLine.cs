@@ -3,7 +3,7 @@ using Returns.Domain.Enums;
 
 namespace Returns.Domain.Api;
 
-public class ReturnLine : TrackableBase
+public sealed class ReturnLine : TrackableBase
 {
     public ReturnLine(string invoiceNumberPurchase, string productId)
     {
@@ -11,11 +11,11 @@ public class ReturnLine : TrackableBase
         ProductId = productId;
     }
 
-    [ReadOnly(true)] public virtual ICollection<ReturnLineAttachment> Attachments { get; set; } = default!;
+    [ReadOnly(true)] public ICollection<ReturnLineAttachment> Attachments { get; set; } = default!;
 
-    [ReadOnly(true)] public virtual ICollection<ReturnLineDevice> Devices { get; set; } = default!;
+    [ReadOnly(true)] public ICollection<ReturnLineDevice> Devices { get; set; } = default!;
 
-    [ReadOnly(true)] public virtual ICollection<ReturnFee> Fees { get; set; } = default!;
+    [ReadOnly(true)] public ICollection<ReturnFee> Fees { get; set; } = default!;
 
     [ReadOnly(true)] public int Id { get; set; }
 
@@ -35,7 +35,7 @@ public class ReturnLine : TrackableBase
 
     public int Quantity { get; set; }
 
-    [ReadOnly(true)] public virtual Return Return { get; set; } = default!;
+    [ReadOnly(true)] public Return Return { get; set; } = default!;
 
     public int ReturnId { get; set; }
 

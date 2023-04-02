@@ -96,7 +96,7 @@ builder.Services.AddAutoMapper(e =>
             (_, mce) => mce.Ignore()
         );
 
-    e.AddProfile<EntityProfile>();
+    e.AddProfile<Profile>();
 });
 
 builder.Services.AddAuthentication(o =>

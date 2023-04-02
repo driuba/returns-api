@@ -7,8 +7,7 @@ namespace Returns.Logic.Repositories.Configurations;
 
 public class FeeConfigurationGroupConfiguration : EntityTypeConfiguration<FeeConfigurationGroup>
 {
-    public FeeConfigurationGroupConfiguration(Expression<Func<FeeConfigurationGroup, bool>>? queryFilterExpression)
-        : base(queryFilterExpression)
+    public FeeConfigurationGroupConfiguration(Expression<Func<FeeConfigurationGroup, bool>>? queryFilterExpression) : base(queryFilterExpression)
     {
     }
 

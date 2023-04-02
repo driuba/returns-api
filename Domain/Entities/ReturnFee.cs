@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace Returns.Domain.Entities;
 
+[UsedImplicitly]
 public class ReturnFee : EntityTrackable
 {
     public virtual FeeConfiguration Configuration { get; set; } = default!;

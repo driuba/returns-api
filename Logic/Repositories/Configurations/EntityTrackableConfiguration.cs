@@ -6,8 +6,7 @@ namespace Returns.Logic.Repositories.Configurations;
 
 public abstract class EntityTrackableConfiguration<T> : EntityTypeConfiguration<T> where T : EntityTrackable
 {
-    protected EntityTrackableConfiguration(Expression<Func<T, bool>>? queryFilterExpression)
-        : base(queryFilterExpression)
+    protected EntityTrackableConfiguration(Expression<Func<T, bool>>? queryFilterExpression) : base(queryFilterExpression)
     {
     }
 

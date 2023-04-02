@@ -3,7 +3,7 @@ using Returns.Domain.Enums;
 
 namespace Returns.Domain.Api;
 
-public class FeeConfiguration : TrackableBase
+public sealed class FeeConfiguration : TrackableBase
 {
     public string? CountryId { get; set; }
 
@@ -13,9 +13,9 @@ public class FeeConfiguration : TrackableBase
 
     public int FeeConfigurationGroupId { get; set; }
 
-    [ReadOnly(true)] public virtual ICollection<ReturnFee> Fees { get; set; } = default!;
+    [ReadOnly(true)] public ICollection<ReturnFee> Fees { get; set; } = default!;
 
-    [ReadOnly(true)] public virtual FeeConfigurationGroup Group { get; set; } = default!;
+    [ReadOnly(true)] public FeeConfigurationGroup Group { get; set; } = default!;
 
     [ReadOnly(true)] public int Id { get; set; }
 

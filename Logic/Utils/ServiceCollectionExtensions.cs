@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Returns.Domain.Services;
 using Returns.Logic.Repositories;
+using Returns.Logic.Services;
 
 namespace Returns.Logic.Utils;
 
@@ -46,6 +47,8 @@ public static class ServiceCollectionExtensions
         });
 
         serviceCollection.AddScoped(sessionServiceFactory);
+
+        serviceCollection.AddScoped<IFeeConfigurationService, FeeConfigurationService>();
     }
 
     private static JsonSerializerOptions BuildJsonSerializerOptions(IServiceProvider _)

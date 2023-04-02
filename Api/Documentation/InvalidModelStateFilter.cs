@@ -25,7 +25,7 @@ public class InvalidModelStateFilter : IOperationFilter
                         }
                     }
                 },
-                Description = "The request is invalid. See _Message_ and _MessagesInner_ for more details."
+                Description = "The request is invalid. See _Message_ and _Messages_ for more details."
             }
         );
     }

@@ -7,8 +7,7 @@ namespace Returns.Logic.Repositories.Configurations;
 
 public class ReturnConfiguration : EntityTrackableConfiguration<Return>
 {
-    public ReturnConfiguration(Expression<Func<Return, bool>>? queryFilterExpression)
-        : base(queryFilterExpression)
+    public ReturnConfiguration(Expression<Func<Return, bool>>? queryFilterExpression) : base(queryFilterExpression)
     {
     }
 

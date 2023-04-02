@@ -1,7 +1,9 @@
-﻿using Returns.Domain.Enums;
+﻿using JetBrains.Annotations;
+using Returns.Domain.Enums;
 
 namespace Returns.Domain.Entities;
 
+[UsedImplicitly]
 public class FeeConfigurationGroup : IEntity
 {
     public FeeConfigurationGroup(string companyId, string description, string name)

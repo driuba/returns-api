@@ -2,7 +2,7 @@
 
 namespace Returns.Domain.Api;
 
-public class ReturnLineAttachment : TrackableBase
+public sealed class ReturnLineAttachment : TrackableBase
 {
     public ReturnLineAttachment(string name, string url)
     {
@@ -12,7 +12,7 @@ public class ReturnLineAttachment : TrackableBase
 
     [ReadOnly(true)] public int Id { get; set; }
 
-    [ReadOnly(true)] public virtual ReturnLine Line { get; set; } = default!;
+    [ReadOnly(true)] public ReturnLine Line { get; set; } = default!;
 
     [ReadOnly(true)] public string Name { get; set; }
 

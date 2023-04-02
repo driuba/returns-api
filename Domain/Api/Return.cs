@@ -3,7 +3,7 @@ using Returns.Domain.Enums;
 
 namespace Returns.Domain.Api;
 
-public class Return : TrackableBase
+public sealed class Return : TrackableBase
 {
     public Return(
         string companyId, [ReadOnly(true)] string currencyCode,
@@ -27,13 +27,13 @@ public class Return : TrackableBase
 
     public string DeliveryPointId { get; set; }
 
-    [ReadOnly(true)] public virtual ICollection<ReturnFee> Fees { get; set; } = default!;
+    [ReadOnly(true)] public ICollection<ReturnFee> Fees { get; set; } = default!;
 
     [ReadOnly(true)] public int Id { get; set; }
 
     public int LabelCount { get; set; }
 
-    public virtual ICollection<ReturnLine> Lines { get; set; } = default!;
+    public ICollection<ReturnLine> Lines { get; set; } = default!;
 
     [ReadOnly(true)] public string Number { get; set; }
 

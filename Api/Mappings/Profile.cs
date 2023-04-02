@@ -1,11 +1,10 @@
-using AutoMapper;
 using Returns.Api.Utils;
 
 namespace Returns.Api.Mappings;
 
-public class EntityProfile : Profile
+public class Profile : AutoMapper.Profile
 {
-    public EntityProfile()
+    public Profile()
     {
         CreateMap<Domain.Entities.FeeConfiguration, Domain.Api.FeeConfiguration>()
             .ExplicitExpansion()
@@ -28,5 +27,7 @@ public class EntityProfile : Profile
         CreateMap<Domain.Entities.ReturnLineAttachment, Domain.Api.ReturnLineAttachment>().ExplicitExpansion();
 
         CreateMap<Domain.Entities.ReturnLineDevice, Domain.Api.ReturnLineDevice>().ExplicitExpansion();
+
+        CreateMap<Domain.Logic.Response, Domain.Api.Response>();
     }
 }

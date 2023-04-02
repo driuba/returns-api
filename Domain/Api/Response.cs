@@ -1,10 +1,13 @@
+using System.ComponentModel;
 using JetBrains.Annotations;
 
 namespace Returns.Domain.Api;
 
 public class Response
 {
-    [UsedImplicitly] public string? Message { get; init; }
+    [ReadOnly(true)] [UsedImplicitly] public bool ConfirmationRequired { get; init; }
 
-    [UsedImplicitly] public IEnumerable<string> MessagesInner { get; init; } = Enumerable.Empty<string>();
+    [ReadOnly(true)] [UsedImplicitly] public string? Message { get; init; }
+
+    [ReadOnly(true)] [UsedImplicitly] public IEnumerable<string> Messages { get; init; } = Enumerable.Empty<string>();
 }

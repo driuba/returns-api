@@ -7,8 +7,7 @@ namespace Returns.Logic.Repositories.Configurations;
 
 public class ReturnLineAttachmentConfiguration : EntityTrackableConfiguration<ReturnLineAttachment>
 {
-    public ReturnLineAttachmentConfiguration(Expression<Func<ReturnLineAttachment, bool>>? queryFilterExpression)
-        : base(queryFilterExpression)
+    public ReturnLineAttachmentConfiguration(Expression<Func<ReturnLineAttachment, bool>>? queryFilterExpression) : base(queryFilterExpression)
     {
     }
 

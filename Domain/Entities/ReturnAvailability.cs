@@ -1,5 +1,8 @@
-﻿namespace Returns.Domain.Entities;
+﻿using JetBrains.Annotations;
 
+namespace Returns.Domain.Entities;
+
+[UsedImplicitly]
 public class ReturnAvailability : IEntity
 {
     public ReturnAvailability(string companyId)
