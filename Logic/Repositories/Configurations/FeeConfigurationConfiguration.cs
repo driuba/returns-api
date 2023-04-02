@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Returns.Domain.Entities;
 
@@ -6,6 +7,11 @@ namespace Returns.Logic.Repositories.Configurations;
 
 public class FeeConfigurationConfiguration : EntityTrackableConfiguration<FeeConfiguration>
 {
+    public FeeConfigurationConfiguration(Expression<Func<FeeConfiguration, bool>>? queryFilterExpression)
+        : base(queryFilterExpression)
+    {
+    }
+
     public override void Configure(EntityTypeBuilder<FeeConfiguration> builder)
     {
         builder.ToTable(

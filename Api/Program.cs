@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Reflection;
-using System.Security.Principal;
 using System.Text.Json.Serialization;
 using AutoMapper.Internal;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +12,8 @@ using Microsoft.OpenApi.Models;
 using Returns.Api.Documentation;
 using Returns.Api.Mappings;
 using Returns.Api.Utils;
+using Returns.Domain.Services;
+using Returns.Logic.Services;
 using Returns.Logic.Utils;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
@@ -117,7 +118,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddServices(
     builder.Environment,
     builder.Configuration,
-    GetPrincipal
+    BuildSessionService
 );
 
 if (builder.Environment.IsDevelopment() || builder.Environment.IsStaging())
@@ -212,7 +213,7 @@ app.MapControllers();
 
 await app.RunAsync();
 
-static IPrincipal GetPrincipal(IServiceProvider serviceProvider)
+static ISessionService BuildSessionService(IServiceProvider serviceProvider)
 {
     var context = serviceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext;
 
@@ -221,5 +222,12 @@ static IPrincipal GetPrincipal(IServiceProvider serviceProvider)
         throw new InvalidOperationException("HTTP context is required.");
     }
 
-    return context.User;
+    var companyId = (string?)context.GetRouteData().Values["companyId"];
+
+    if (string.IsNullOrEmpty(companyId))
+    {
+        throw new InvalidOperationException("Company identifier is required.");
+    }
+
+    return new SessionService(companyId, context.User);
 }

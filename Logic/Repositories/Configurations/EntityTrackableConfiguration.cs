@@ -1,12 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Returns.Domain.Entities;
 
 namespace Returns.Logic.Repositories.Configurations;
 
-public abstract class EntityTrackableConfiguration<T> : IEntityTypeConfiguration<T> where T : EntityTrackable
+public abstract class EntityTrackableConfiguration<T> : EntityTypeConfiguration<T> where T : EntityTrackable
 {
-    public virtual void Configure(EntityTypeBuilder<T> builder)
+    protected EntityTrackableConfiguration(Expression<Func<T, bool>>? queryFilterExpression)
+        : base(queryFilterExpression)
+    {
+    }
+
+    public override void Configure(EntityTypeBuilder<T> builder)
     {
         builder
             .Property(et => et.Created)
@@ -25,5 +30,7 @@ public abstract class EntityTrackableConfiguration<T> : IEntityTypeConfiguration
             .Property(et => et.UserModified)
             .HasMaxLength(30)
             .IsRequired(false);
+
+        base.Configure(builder);
     }
 }

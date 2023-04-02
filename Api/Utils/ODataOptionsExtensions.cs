@@ -6,11 +6,9 @@ namespace Returns.Api.Utils;
 
 internal static class ODataOptionsExtensions
 {
-    internal static ODataOptions AddEdm(this ODataOptions options)
+    internal static void AddEdm(this ODataOptions options)
     {
-        options.AddRouteComponents("api", BuildEdm());
-
-        return options;
+        options.AddRouteComponents("api/{companyId}", BuildEdm());
     }
 
     private static IEdmModel BuildEdm()

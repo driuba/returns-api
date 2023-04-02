@@ -1,12 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Returns.Domain.Entities;
 
 namespace Returns.Logic.Repositories.Configurations;
 
-public class FeeConfigurationGroupConfiguration : IEntityTypeConfiguration<FeeConfigurationGroup>
+public class FeeConfigurationGroupConfiguration : EntityTypeConfiguration<FeeConfigurationGroup>
 {
-    public void Configure(EntityTypeBuilder<FeeConfigurationGroup> builder)
+    public FeeConfigurationGroupConfiguration(Expression<Func<FeeConfigurationGroup, bool>>? queryFilterExpression)
+        : base(queryFilterExpression)
+    {
+    }
+
+    public override void Configure(EntityTypeBuilder<FeeConfigurationGroup> builder)
     {
         builder.ToTable("FeeConfigurationGroups");
 
@@ -42,5 +48,7 @@ public class FeeConfigurationGroupConfiguration : IEntityTypeConfiguration<FeeCo
         builder
             .Property(fcg => fcg.Type)
             .IsRequired();
+
+        base.Configure(builder);
     }
 }

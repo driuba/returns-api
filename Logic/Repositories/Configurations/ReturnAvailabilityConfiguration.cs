@@ -1,12 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Returns.Domain.Entities;
 
 namespace Returns.Logic.Repositories.Configurations;
 
-public class ReturnAvailabilityConfiguration : IEntityTypeConfiguration<ReturnAvailability>
+public class ReturnAvailabilityConfiguration : EntityTypeConfiguration<ReturnAvailability>
 {
-    public void Configure(EntityTypeBuilder<ReturnAvailability> builder)
+    public ReturnAvailabilityConfiguration(Expression<Func<ReturnAvailability, bool>>? queryFilterExpression)
+        : base(queryFilterExpression)
+    {
+    }
+
+    public override void Configure(EntityTypeBuilder<ReturnAvailability> builder)
     {
         builder.ToTable("ReturnAvailabilities");
 
@@ -34,5 +40,7 @@ public class ReturnAvailabilityConfiguration : IEntityTypeConfiguration<ReturnAv
             .HasIndex(ra => new { ra.CompanyId, ra.CountryId })
             .IsUnique()
             .HasFilter(null);
+
+        base.Configure(builder);
     }
 }

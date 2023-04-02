@@ -6,9 +6,6 @@
     <RootNamespace>Returns.Logic</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="Services" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -34,5 +31,10 @@
     <EmbeddedResource Include="Migrations\Scripts\InitData\InsertIntoImportTables.sql" />
     <None Remove="Migrations\Scripts\InitData\InsertIntoReturnAvailabilities.sql" />
     <EmbeddedResource Include="Migrations\Scripts\InitData\InsertIntoReturnAvailabilities.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="JetBrains.Annotations">
+      <HintPath>..\..\..\..\..\..\.nuget\packages\jetbrains.annotations\2022.3.1\lib\netstandard2.0\JetBrains.Annotations.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

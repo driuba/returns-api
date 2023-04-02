@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Returns.Domain.Entities;
 
@@ -6,6 +7,11 @@ namespace Returns.Logic.Repositories.Configurations;
 
 public class ReturnLineAttachmentConfiguration : EntityTrackableConfiguration<ReturnLineAttachment>
 {
+    public ReturnLineAttachmentConfiguration(Expression<Func<ReturnLineAttachment, bool>>? queryFilterExpression)
+        : base(queryFilterExpression)
+    {
+    }
+
     public override void Configure(EntityTypeBuilder<ReturnLineAttachment> builder)
     {
         builder.ToTable("ReturnLineAttachments");

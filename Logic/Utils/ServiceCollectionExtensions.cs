@@ -1,26 +1,22 @@
-using System.Security.Principal;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Returns.Domain.Services;
 using Returns.Logic.Repositories;
 
 namespace Returns.Logic.Utils;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddServices(
-        this IServiceCollection serviceCollection,
+    public static void AddServices(this IServiceCollection serviceCollection,
         IHostEnvironment hostEnvironment,
         IConfiguration configuration,
-        Func<IServiceProvider, IPrincipal> principalFactory
-    )
+        Func<IServiceProvider, ISessionService> sessionServiceFactory)
     {
         serviceCollection.AddLogging();
-
-        serviceCollection.AddScoped(principalFactory);
 
         serviceCollection.AddSingleton(BuildJsonSerializerOptions);
 
@@ -49,7 +45,7 @@ public static class ServiceCollectionExtensions
             }
         });
 
-        return serviceCollection;
+        serviceCollection.AddScoped(sessionServiceFactory);
     }
 
     private static JsonSerializerOptions BuildJsonSerializerOptions(IServiceProvider _)
