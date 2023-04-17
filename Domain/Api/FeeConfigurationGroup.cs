@@ -5,14 +5,11 @@ namespace Returns.Domain.Api;
 
 public sealed class FeeConfigurationGroup
 {
-    public FeeConfigurationGroup(string companyId, string description, string name)
+    public FeeConfigurationGroup(string description, string name)
     {
-        CompanyId = companyId;
         Description = description;
         Name = name;
     }
-
-    [ReadOnly(true)] public string CompanyId { get; set; }
 
     [ReadOnly(true)] public ICollection<FeeConfiguration> Configurations { get; set; } = default!;
 

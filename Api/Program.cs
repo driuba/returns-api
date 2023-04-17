@@ -140,7 +140,7 @@ if (builder.Environment.IsDevelopment() || builder.Environment.IsStaging())
             "v1",
             new OpenApiInfo
             {
-                Title = "Returns API v1",
+                Title = "Returns API",
                 Version = "v1"
             }
         );

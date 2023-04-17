@@ -19,8 +19,8 @@ public class RegionConfiguration : IEntityTypeConfiguration<Region>
 
         builder
             .Property(r => r.Name)
-            .HasMaxLength(100)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(100);
 
         builder
             .Property(r => r.Type)
