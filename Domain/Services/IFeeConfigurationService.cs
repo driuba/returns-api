@@ -1,5 +1,5 @@
+using Returns.Domain.Dto;
 using Returns.Domain.Entities;
-using Returns.Domain.Logic;
 
 namespace Returns.Domain.Services;
 

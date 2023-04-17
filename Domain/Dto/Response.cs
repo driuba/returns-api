@@ -1,4 +1,4 @@
-namespace Returns.Domain.Logic;
+namespace Returns.Domain.Dto;
 
 public class Response
 {

@@ -19,17 +19,12 @@ public class FeeConfigurationConfiguration : EntityTrackableConfiguration<FeeCon
             {
                 b.HasCheckConstraint(
                     "CK_FeeConfigurations_CountryId_CustomerId",
-                    $"[{nameof(FeeConfiguration.CountryId)}] IS NULL OR [{nameof(FeeConfiguration.CustomerId)}] IS NULL"
+                    $"[{nameof(FeeConfiguration.RegionId)}] IS NULL OR [{nameof(FeeConfiguration.CustomerId)}] IS NULL"
                 );
             }
         );
 
         builder.HasKey(fc => fc.Id);
-
-        builder
-            .Property(fc => fc.CountryId)
-            .HasMaxLength(2)
-            .IsRequired(false);
 
         builder
             .Property(fc => fc.CustomerId)
@@ -48,6 +43,11 @@ public class FeeConfigurationConfiguration : EntityTrackableConfiguration<FeeCon
         builder
             .Property(fc => fc.Id)
             .IsRequired();
+
+        builder
+            .Property(fc => fc.RegionId)
+            .HasMaxLength(2)
+            .IsRequired(false);
 
         builder
             .Property(fc => fc.Value)
@@ -69,7 +69,7 @@ public class FeeConfigurationConfiguration : EntityTrackableConfiguration<FeeCon
             .OnDelete(DeleteBehavior.Cascade);
 
         builder
-            .HasIndex(fc => new { fc.CountryId, fc.CustomerId, fc.FeeConfigurationGroupId })
+            .HasIndex(fc => new { CountryId = fc.RegionId, fc.CustomerId, fc.FeeConfigurationGroupId })
             .IsUnique()
             .HasFilter($"[{nameof(FeeConfiguration.Deleted)}] = 0");
 

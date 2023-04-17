@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Returns.Domain.Dto;
 using Returns.Domain.Entities;
 using Returns.Domain.Enums;
-using Returns.Domain.Logic;
 using Returns.Domain.Services;
 using Returns.Logic.Repositories;
 
@@ -10,15 +10,17 @@ namespace Returns.Logic.Services;
 public class FeeConfigurationService : IFeeConfigurationService
 {
     private readonly ReturnDbContext _dbContext;
+    private readonly IRegionService _regionService;
 
-    public FeeConfigurationService(ReturnDbContext dbContext)
+    public FeeConfigurationService(ReturnDbContext dbContext, IRegionService regionService)
     {
         _dbContext = dbContext;
+        _regionService = regionService;
     }
 
     public async Task<ValueResponse<FeeConfiguration>> Create(FeeConfiguration feeConfiguration)
     {
-        if (string.IsNullOrEmpty(feeConfiguration.CountryId) && string.IsNullOrEmpty(feeConfiguration.CustomerId))
+        if (string.IsNullOrEmpty(feeConfiguration.CustomerId) && !feeConfiguration.RegionId.HasValue)
         {
             return new ValueResponse<FeeConfiguration>
             {
@@ -26,7 +28,7 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        if (!(string.IsNullOrEmpty(feeConfiguration.CountryId) || string.IsNullOrEmpty(feeConfiguration.CustomerId)))
+        if (!string.IsNullOrEmpty(feeConfiguration.CustomerId) && feeConfiguration.RegionId.HasValue)
         {
             return new ValueResponse<FeeConfiguration>
             {
@@ -42,7 +44,7 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        if (feeConfiguration is { ValueType: FeeValueType.Fixed, ValueMinimum: { } })
+        if (feeConfiguration is { ValueType: FeeValueType.Fixed, ValueMinimum: not null })
         {
             return new ValueResponse<FeeConfiguration>
             {
@@ -58,7 +60,18 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        // TODO: add mock country existence validation
+        if (feeConfiguration.RegionId.HasValue)
+        {
+            var region = await _regionService.GetRegion(feeConfiguration.RegionId.Value);
+
+            if (region is null)
+            {
+                return new ValueResponse<FeeConfiguration>
+                {
+                    Message = $"Region {feeConfiguration.RegionId:D3} was not found."
+                };
+            }
+        }
 
         // TODO: add mock customer existence validation
 
@@ -77,7 +90,7 @@ public class FeeConfigurationService : IFeeConfigurationService
         var feeConfigurationExists = await _dbContext
             .Set<FeeConfiguration>()
             .Where(fc => !fc.Deleted)
-            .Where(fc => string.IsNullOrEmpty(feeConfiguration.CountryId) || fc.CountryId == feeConfiguration.CountryId)
+            .Where(fc => !feeConfiguration.RegionId.HasValue || fc.RegionId == feeConfiguration.RegionId)
             .Where(fc => string.IsNullOrEmpty(feeConfiguration.CustomerId) || fc.CustomerId == feeConfiguration.CustomerId)
             .AnyAsync(fc => fc.FeeConfigurationGroupId == feeConfiguration.FeeConfigurationGroupId);
 
@@ -87,7 +100,7 @@ public class FeeConfigurationService : IFeeConfigurationService
             {
                 Message =
                     $"Fee configuration group {feeConfigurationGroup.Name} already has fee configuration for " +
-                    $"{(string.IsNullOrEmpty(feeConfiguration.CustomerId) ? feeConfiguration.CountryId : feeConfiguration.CustomerId)}."
+                    $"{(string.IsNullOrEmpty(feeConfiguration.CustomerId) ? $"{feeConfiguration.RegionId:D3}" : feeConfiguration.CustomerId)}."
             };
         }
 
@@ -127,7 +140,7 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        if (string.IsNullOrEmpty(feeConfiguration.CountryId) && string.IsNullOrEmpty(feeConfiguration.CustomerId))
+        if (string.IsNullOrEmpty(feeConfiguration.CustomerId) && !feeConfiguration.RegionId.HasValue)
         {
             return new ValueResponse<FeeConfiguration>
             {
@@ -156,7 +169,7 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        if (feeConfigurationCandidate is { ValueType: FeeValueType.Fixed, ValueMinimum: { } })
+        if (feeConfigurationCandidate is { ValueType: FeeValueType.Fixed, ValueMinimum: not null })
         {
             return new ValueResponse<FeeConfiguration>
             {

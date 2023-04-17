@@ -1,4 +1,5 @@
 using Returns.Api.Utils;
+using Returns.Domain.Dto;
 
 namespace Returns.Api.Mappings;
 
@@ -28,6 +29,6 @@ public class Profile : AutoMapper.Profile
 
         CreateMap<Domain.Entities.ReturnLineDevice, Domain.Api.ReturnLineDevice>().ExplicitExpansion();
 
-        CreateMap<Domain.Logic.Response, Domain.Api.Response>();
+        CreateMap<Response, Domain.Api.Response>();
     }
 }

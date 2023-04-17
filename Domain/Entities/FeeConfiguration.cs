@@ -6,8 +6,6 @@ namespace Returns.Domain.Entities;
 [UsedImplicitly]
 public class FeeConfiguration : EntityTrackable
 {
-    public string? CountryId { get; set; }
-
     public string? CustomerId { get; set; }
 
     public bool Deleted { get; set; }
@@ -19,6 +17,8 @@ public class FeeConfiguration : EntityTrackable
     public virtual FeeConfigurationGroup Group { get; set; } = default!;
 
     public int Id { get; set; }
+
+    public int? RegionId { get; set; }
 
     public decimal Value { get; set; }
 

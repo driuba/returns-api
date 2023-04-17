@@ -13,9 +13,7 @@ public class ReturnDesignTimeDbContextFactory : IDesignTimeDbContextFactory<Retu
         var builder = new DbContextOptionsBuilder<ReturnDbContext>();
 
         builder.UseSqlite(
-            Environment.ExpandEnvironmentVariables(
-                @"DataSource=%HOME%/Repos/returns/uni/databases/returns.db;Mode=ReadWrite"
-            ),
+            Environment.ExpandEnvironmentVariables(@"DataSource=%HOME%/Repos/returns/uni/databases/returns.db;Mode=ReadWrite"),
             o => o.UseRelationalNulls()
         );
 

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Returns.Domain.Services;
+using Returns.Logic.Mock.Repositories;
 using Returns.Logic.Repositories;
 using Returns.Logic.Services;
 
@@ -12,14 +13,41 @@ namespace Returns.Logic.Utils;
 
 public static class ServiceCollectionExtensions
 {
-    public static void AddServices(this IServiceCollection serviceCollection,
+    public static void AddServices(
+        this IServiceCollection serviceCollection,
         IHostEnvironment hostEnvironment,
         IConfiguration configuration,
-        Func<IServiceProvider, ISessionService> sessionServiceFactory)
+        Func<IServiceProvider, ISessionService> sessionServiceFactory
+    )
     {
         serviceCollection.AddLogging();
 
         serviceCollection.AddSingleton(BuildJsonSerializerOptions);
+
+        serviceCollection.AddDbContext<MockDbContext>(b =>
+        {
+            var connectionString = configuration.GetConnectionString("Mock");
+
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new InvalidOperationException("Mock connection string is required.");
+            }
+
+            b.UseSqlite(
+                Environment.ExpandEnvironmentVariables(connectionString),
+                o =>
+                {
+                    o.CommandTimeout(600);
+
+                    o.UseRelationalNulls();
+                }
+            );
+
+            if (hostEnvironment.IsDevelopment())
+            {
+                b.EnableSensitiveDataLogging();
+            }
+        });
 
         serviceCollection.AddDbContext<ReturnDbContext>(b =>
         {
@@ -49,6 +77,7 @@ public static class ServiceCollectionExtensions
         serviceCollection.AddScoped(sessionServiceFactory);
 
         serviceCollection.AddScoped<IFeeConfigurationService, FeeConfigurationService>();
+        serviceCollection.AddScoped<IRegionService, RegionService>();
     }
 
     private static JsonSerializerOptions BuildJsonSerializerOptions(IServiceProvider _)
