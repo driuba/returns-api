@@ -4,7 +4,7 @@ namespace Returns.Logic.Utils;
 
 internal static class EmbeddedResourceReader
 {
-    public static Task<string> ReadAsync(string name)
+    public static Task<string> Read(string name)
     {
         var assembly = Assembly.GetExecutingAssembly();
 

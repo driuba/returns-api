@@ -76,6 +76,7 @@ public static class ServiceCollectionExtensions
 
         serviceCollection.AddScoped(sessionServiceFactory);
 
+        serviceCollection.AddScoped<ICustomerService, CustomerService>();
         serviceCollection.AddScoped<IFeeConfigurationService, FeeConfigurationService>();
         serviceCollection.AddScoped<IRegionService, RegionService>();
     }

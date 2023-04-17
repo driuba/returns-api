@@ -9,11 +9,13 @@ namespace Returns.Logic.Services;
 
 public class FeeConfigurationService : IFeeConfigurationService
 {
+    private readonly ICustomerService _customerService;
     private readonly ReturnDbContext _dbContext;
     private readonly IRegionService _regionService;
 
-    public FeeConfigurationService(ReturnDbContext dbContext, IRegionService regionService)
+    public FeeConfigurationService(ICustomerService customerService, ReturnDbContext dbContext, IRegionService regionService)
     {
+        _customerService = customerService;
         _dbContext = dbContext;
         _regionService = regionService;
     }
@@ -73,7 +75,28 @@ public class FeeConfigurationService : IFeeConfigurationService
             }
         }
 
-        // TODO: add mock customer existence validation
+        if (!string.IsNullOrEmpty(feeConfiguration.CustomerId))
+        {
+            var deliveryPoint = await _customerService.GetDeliveryPoint(feeConfiguration.CustomerId);
+
+            if (deliveryPoint is null)
+            {
+                return new ValueResponse<FeeConfiguration>
+                {
+                    Message = $"Customer {feeConfiguration.CustomerId} was not found."
+                };
+            }
+
+            if (!string.Equals(deliveryPoint.CustomerId, deliveryPoint.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                return new ValueResponse<FeeConfiguration>
+                {
+                    Message =
+                        $"Customer {feeConfiguration.CustomerId} ({deliveryPoint.Name}) is not a parent customer, " +
+                        $"only parent customers may have fees configured."
+                };
+            }
+        }
 
         var feeConfigurationGroup = await _dbContext
             .Set<FeeConfigurationGroup>()
