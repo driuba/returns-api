@@ -31,7 +31,7 @@ public class ReturnLineAttachmentConfiguration : EntityTrackableConfiguration<Re
             .IsRequired();
 
         builder
-            .Property(rla => rla.StorageEntryId)
+            .Property(rla => rla.StorageId)
             .IsRequired(false);
 
         builder

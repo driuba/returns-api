@@ -8,22 +8,18 @@ public class Return : EntityTrackable
 {
     public Return(
         string companyId,
-        string currencyCode,
         string customerId,
         string deliveryPointId,
         string number
     )
     {
         CompanyId = companyId;
-        CurrencyCode = currencyCode;
         CustomerId = customerId;
         DeliveryPointId = deliveryPointId;
         Number = number;
     }
 
     public string CompanyId { get; set; }
-
-    public string CurrencyCode { get; set; }
 
     public string CustomerId { get; set; }
 

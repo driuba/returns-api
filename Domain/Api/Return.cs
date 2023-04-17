@@ -6,26 +6,19 @@ namespace Returns.Domain.Api;
 public sealed class Return : TrackableBase
 {
     public Return(
-        string companyId, [ReadOnly(true)] string currencyCode,
         string customerId,
         string deliveryPointId,
         string number
     )
     {
-        CompanyId = companyId;
-        CurrencyCode = currencyCode;
         CustomerId = customerId;
         DeliveryPointId = deliveryPointId;
         Number = number;
     }
 
-    [ReadOnly(true)] public string CompanyId { get; set; }
-
-    public string CurrencyCode { get; set; }
-
     [ReadOnly(true)] public string CustomerId { get; set; }
 
-    public string DeliveryPointId { get; set; }
+    [ReadOnly(true)] public string DeliveryPointId { get; set; }
 
     [ReadOnly(true)] public ICollection<ReturnFee> Fees { get; set; } = default!;
 
@@ -37,7 +30,7 @@ public sealed class Return : TrackableBase
 
     [ReadOnly(true)] public string Number { get; set; }
 
-    public string? RmaNumber { get; set; }
+    [ReadOnly(true)] public string? RmaNumber { get; set; }
 
     [ReadOnly(true)] public ReturnState State { get; set; }
 }

@@ -80,11 +80,11 @@ public class FeeConfigurationsController : ControllerBase
             return NotFound();
         }
 
-        var feeConfiguration = _mapper.Map<FeeConfiguration>(entity);
+        var feeConfigurationCandidate = _mapper.Map<FeeConfiguration>(entity);
 
-        delta.Patch(feeConfiguration);
+        delta.Patch(feeConfigurationCandidate);
 
-        _mapper.Map(feeConfiguration, entity);
+        _mapper.Map(feeConfigurationCandidate, entity);
 
         var response = await _feeConfigurationService.Update(entity);
 
@@ -101,10 +101,10 @@ public class FeeConfigurationsController : ControllerBase
     }
 
     [HttpPost("feeConfigurations")]
-    public async Task<IActionResult> Post(string companyId, FeeConfiguration feeConfiguration)
+    public async Task<IActionResult> Post(string companyId, FeeConfiguration feeConfigurationCandidate)
     {
         var response = await _feeConfigurationService.Create(
-            _mapper.Map<Domain.Entities.FeeConfiguration>(feeConfiguration)
+            _mapper.Map<Domain.Entities.FeeConfiguration>(feeConfigurationCandidate)
         );
 
         if (response.Success)

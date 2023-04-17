@@ -19,7 +19,7 @@ public class ReturnLineAttachment : EntityTrackable
 
     public int ReturnLineId { get; set; }
 
-    public Guid? StorageEntryId { get; set; }
+    public Guid? StorageId { get; set; }
 
     public string Url { get; set; }
 }

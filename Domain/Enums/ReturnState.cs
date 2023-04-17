@@ -4,5 +4,7 @@ public enum ReturnState
 {
     New = 0,
     Registered = 10,
-    Invoiced = 20
+    Declined = 20,
+    DeclinedUpdated = 25,
+    Invoiced = 30
 }

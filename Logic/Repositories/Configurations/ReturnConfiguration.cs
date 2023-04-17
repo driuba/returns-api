@@ -23,11 +23,6 @@ public class ReturnConfiguration : EntityTrackableConfiguration<Return>
             .IsRequired();
 
         builder
-            .Property(r => r.CurrencyCode)
-            .HasMaxLength(3)
-            .IsRequired();
-
-        builder
             .Property(r => r.CustomerId)
             .HasMaxLength(20)
             .IsRequired();

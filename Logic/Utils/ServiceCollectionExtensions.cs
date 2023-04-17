@@ -79,6 +79,8 @@ public static class ServiceCollectionExtensions
         serviceCollection.AddScoped<ICustomerService, CustomerService>();
         serviceCollection.AddScoped<IFeeConfigurationService, FeeConfigurationService>();
         serviceCollection.AddScoped<IRegionService, RegionService>();
+        serviceCollection.AddScoped<IReturnService, ReturnService>();
+        serviceCollection.AddScoped<IStorageService, StorageService>();
     }
 
     private static JsonSerializerOptions BuildJsonSerializerOptions(IServiceProvider _)

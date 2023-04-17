@@ -23,11 +23,13 @@ public class ReturnLineConfiguration : EntityTrackableConfiguration<ReturnLine>
 
         builder
             .Property(rl => rl.InvoiceNumberPurchase)
-            .HasMaxLength(20).IsRequired(false);
+            .HasMaxLength(20)
+            .IsRequired(false);
 
         builder
             .Property(rl => rl.InvoiceNumberReturn)
-            .HasMaxLength(20).IsRequired(false);
+            .HasMaxLength(20)
+            .IsRequired(false);
 
         builder
             .Property(rl => rl.NoteReturn)

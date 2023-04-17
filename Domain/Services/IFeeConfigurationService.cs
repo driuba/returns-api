@@ -5,7 +5,7 @@ namespace Returns.Domain.Services;
 
 public interface IFeeConfigurationService
 {
-    Task<ValueResponse<FeeConfiguration>> Create(FeeConfiguration feeConfiguration);
+    Task<ValueResponse<FeeConfiguration>> Create(FeeConfiguration feeConfigurationCandidate);
 
     Task<ValueResponse<FeeConfiguration>> Delete(int id);
 

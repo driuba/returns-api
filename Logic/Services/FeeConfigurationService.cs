@@ -20,9 +20,9 @@ public class FeeConfigurationService : IFeeConfigurationService
         _regionService = regionService;
     }
 
-    public async Task<ValueResponse<FeeConfiguration>> Create(FeeConfiguration feeConfiguration)
+    public async Task<ValueResponse<FeeConfiguration>> Create(FeeConfiguration feeConfigurationCandidate)
     {
-        if (string.IsNullOrEmpty(feeConfiguration.CustomerId) && !feeConfiguration.RegionId.HasValue)
+        if (string.IsNullOrEmpty(feeConfigurationCandidate.CustomerId) && !feeConfigurationCandidate.RegionId.HasValue)
         {
             return new ValueResponse<FeeConfiguration>
             {
@@ -30,7 +30,7 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        if (!string.IsNullOrEmpty(feeConfiguration.CustomerId) && feeConfiguration.RegionId.HasValue)
+        if (!string.IsNullOrEmpty(feeConfigurationCandidate.CustomerId) && feeConfigurationCandidate.RegionId.HasValue)
         {
             return new ValueResponse<FeeConfiguration>
             {
@@ -38,7 +38,7 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        if (feeConfiguration.Value < 0)
+        if (feeConfigurationCandidate.Value < 0)
         {
             return new ValueResponse<FeeConfiguration>
             {
@@ -46,7 +46,7 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        if (feeConfiguration is { ValueType: FeeValueType.Fixed, ValueMinimum: not null })
+        if (feeConfigurationCandidate is { ValueType: FeeValueType.Fixed, ValueMinimum: not null })
         {
             return new ValueResponse<FeeConfiguration>
             {
@@ -54,7 +54,7 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        if (feeConfiguration.ValueMinimum <= 0)
+        if (feeConfigurationCandidate.ValueMinimum <= 0)
         {
             return new ValueResponse<FeeConfiguration>
             {
@@ -62,28 +62,28 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        if (feeConfiguration.RegionId.HasValue)
+        if (feeConfigurationCandidate.RegionId.HasValue)
         {
-            var region = await _regionService.GetRegion(feeConfiguration.RegionId.Value);
+            var region = await _regionService.GetRegion(feeConfigurationCandidate.RegionId.Value);
 
             if (region is null)
             {
                 return new ValueResponse<FeeConfiguration>
                 {
-                    Message = $"Region {feeConfiguration.RegionId:D3} was not found."
+                    Message = $"Region {feeConfigurationCandidate.RegionId:D3} was not found."
                 };
             }
         }
 
-        if (!string.IsNullOrEmpty(feeConfiguration.CustomerId))
+        if (!string.IsNullOrEmpty(feeConfigurationCandidate.CustomerId))
         {
-            var deliveryPoint = await _customerService.GetDeliveryPoint(feeConfiguration.CustomerId);
+            var deliveryPoint = await _customerService.GetDeliveryPoint(feeConfigurationCandidate.CustomerId);
 
             if (deliveryPoint is null)
             {
                 return new ValueResponse<FeeConfiguration>
                 {
-                    Message = $"Customer {feeConfiguration.CustomerId} was not found."
+                    Message = $"Customer {feeConfigurationCandidate.CustomerId} was not found."
                 };
             }
 
@@ -92,7 +92,7 @@ public class FeeConfigurationService : IFeeConfigurationService
                 return new ValueResponse<FeeConfiguration>
                 {
                     Message =
-                        $"Customer {feeConfiguration.CustomerId} ({deliveryPoint.Name}) is not a parent customer, " +
+                        $"Customer {feeConfigurationCandidate.CustomerId} ({deliveryPoint.Name}) is not a parent customer, " +
                         $"only parent customers may have fees configured."
                 };
             }
@@ -100,22 +100,22 @@ public class FeeConfigurationService : IFeeConfigurationService
 
         var feeConfigurationGroup = await _dbContext
             .Set<FeeConfigurationGroup>()
-            .SingleOrDefaultAsync(fcg => fcg.Id == feeConfiguration.FeeConfigurationGroupId);
+            .SingleOrDefaultAsync(fcg => fcg.Id == feeConfigurationCandidate.FeeConfigurationGroupId);
 
         if (feeConfigurationGroup is null)
         {
             return new ValueResponse<FeeConfiguration>
             {
-                Message = $"Fee configuration group {feeConfiguration.FeeConfigurationGroupId} was not found."
+                Message = $"Fee configuration group {feeConfigurationCandidate.FeeConfigurationGroupId} was not found."
             };
         }
 
         var feeConfigurationExists = await _dbContext
             .Set<FeeConfiguration>()
             .Where(fc => !fc.Deleted)
-            .Where(fc => !feeConfiguration.RegionId.HasValue || fc.RegionId == feeConfiguration.RegionId)
-            .Where(fc => string.IsNullOrEmpty(feeConfiguration.CustomerId) || fc.CustomerId == feeConfiguration.CustomerId)
-            .AnyAsync(fc => fc.FeeConfigurationGroupId == feeConfiguration.FeeConfigurationGroupId);
+            .Where(fc => !feeConfigurationCandidate.RegionId.HasValue || fc.RegionId == feeConfigurationCandidate.RegionId)
+            .Where(fc => string.IsNullOrEmpty(feeConfigurationCandidate.CustomerId) || fc.CustomerId == feeConfigurationCandidate.CustomerId)
+            .AnyAsync(fc => fc.FeeConfigurationGroupId == feeConfigurationCandidate.FeeConfigurationGroupId);
 
         if (feeConfigurationExists)
         {
@@ -123,20 +123,20 @@ public class FeeConfigurationService : IFeeConfigurationService
             {
                 Message =
                     $"Fee configuration group {feeConfigurationGroup.Name} already has fee configuration for " +
-                    $"{(string.IsNullOrEmpty(feeConfiguration.CustomerId) ? $"{feeConfiguration.RegionId:D3}" : feeConfiguration.CustomerId)}."
+                    $"{(string.IsNullOrEmpty(feeConfigurationCandidate.CustomerId) ? $"{feeConfigurationCandidate.RegionId:D3}" : feeConfigurationCandidate.CustomerId)}."
             };
         }
 
         _dbContext
             .Set<FeeConfiguration>()
-            .Add(feeConfiguration);
+            .Add(feeConfigurationCandidate);
 
         await _dbContext.SaveChangesAsync();
 
         return new ValueResponse<FeeConfiguration>
         {
             Success = true,
-            Value = feeConfiguration
+            Value = feeConfigurationCandidate
         };
     }
 
@@ -208,13 +208,13 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        var feeConfiguration = await _dbContext
+        var feeConfigurationExisting = await _dbContext
             .Set<FeeConfiguration>()
             .AsTracking()
             .Where(fc => !fc.Deleted)
             .SingleOrDefaultAsync(fc => fc.Id == feeConfigurationCandidate.Id);
 
-        if (feeConfiguration is null)
+        if (feeConfigurationExisting is null)
         {
             return new ValueResponse<FeeConfiguration>
             {
@@ -222,16 +222,16 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        feeConfiguration.Value = feeConfigurationCandidate.Value;
-        feeConfiguration.ValueMinimum = feeConfigurationCandidate.ValueMinimum;
-        feeConfiguration.ValueType = feeConfigurationCandidate.ValueType;
+        feeConfigurationExisting.Value = feeConfigurationCandidate.Value;
+        feeConfigurationExisting.ValueMinimum = feeConfigurationCandidate.ValueMinimum;
+        feeConfigurationExisting.ValueType = feeConfigurationCandidate.ValueType;
 
         await _dbContext.SaveChangesAsync();
 
         return new ValueResponse<FeeConfiguration>
         {
             Success = true,
-            Value = feeConfiguration
+            Value = feeConfigurationExisting
         };
     }
 }
