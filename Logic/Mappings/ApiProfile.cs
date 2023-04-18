@@ -1,11 +1,35 @@
-using Returns.Api.Utils;
-using Returns.Domain.Dto;
+using Returns.Logic.Utils;
 
-namespace Returns.Api.Mappings;
+namespace Returns.Logic.Mappings;
 
-public class Profile : AutoMapper.Profile
+public sealed class ApiProfile : AutoMapper.Profile
 {
-    public Profile()
+    public ApiProfile()
+    {
+        MapDto();
+        MapEntities();
+    }
+
+    private void MapDto()
+    {
+        CreateMap<Domain.Api.ReturnRequest, Domain.Dto.Return>();
+
+        CreateMap<Domain.Api.ReturnLineRequest, Domain.Dto.ReturnLine>();
+
+        CreateMap<Domain.Dto.Response, Domain.Api.Response>();
+
+        CreateMap<Domain.Dto.ReturnValidated, Domain.Api.ReturnValidated>();
+
+        CreateMap<Domain.Dto.ReturnLineValidated, Domain.Api.ReturnLineValidated>();
+
+        CreateMap<Domain.Dto.ReturnEstimated, Domain.Api.ReturnEstimated>();
+
+        CreateMap<Domain.Dto.ReturnLineEstimated, Domain.Api.ReturnLineEstimated>();
+
+        CreateMap<Domain.Dto.ReturnFeeEstimated, Domain.Api.ReturnFeeEstimated>();
+    }
+
+    private void MapEntities()
     {
         CreateMap<Domain.Entities.FeeConfiguration, Domain.Api.FeeConfiguration>()
             .ExplicitExpansion()
@@ -28,7 +52,5 @@ public class Profile : AutoMapper.Profile
         CreateMap<Domain.Entities.ReturnLineAttachment, Domain.Api.ReturnLineAttachment>().ExplicitExpansion();
 
         CreateMap<Domain.Entities.ReturnLineDevice, Domain.Api.ReturnLineDevice>().ExplicitExpansion();
-
-        CreateMap<Response, Domain.Api.Response>();
     }
 }

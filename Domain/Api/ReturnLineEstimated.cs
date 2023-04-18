@@ -1,8 +1,8 @@
-namespace Returns.Domain.Dto;
+namespace Returns.Domain.Api;
 
 public class ReturnLineEstimated : ReturnLineValidated
 {
-    public ReturnLineEstimated(string invoiceNumber, string productId, string reference) : base(invoiceNumber, productId, reference)
+    public ReturnLineEstimated(string reference) : base(reference)
     {
     }
 

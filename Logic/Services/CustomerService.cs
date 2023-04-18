@@ -21,6 +21,11 @@ public class CustomerService : ICustomerService
         return _dbContext
             .Set<Domain.Mock.Customer>()
             .Where(c => c.CompanyId == _sessionService.CompanyId)
+            .Where(c =>
+                string.IsNullOrEmpty(_sessionService.CustomerId) ||
+                c.Id == _sessionService.CustomerId ||
+                c.ParentId == _sessionService.CustomerId
+            )
             .Where(c => c.Id == deliveryPointId)
             .Select(c => new Customer(c.ParentId ?? c.Id, c.Id, c.Name)
             {

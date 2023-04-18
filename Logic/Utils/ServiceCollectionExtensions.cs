@@ -1,10 +1,13 @@
+using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AutoMapper.Internal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Returns.Domain.Services;
+using Returns.Logic.Mappings;
 using Returns.Logic.Mock.Repositories;
 using Returns.Logic.Repositories;
 using Returns.Logic.Services;
@@ -21,6 +24,26 @@ public static class ServiceCollectionExtensions
     )
     {
         serviceCollection.AddLogging();
+
+        serviceCollection.AddAutoMapper(e =>
+        {
+            e.AllowNullCollections = true;
+
+            e
+                .Internal()
+                .ForAllPropertyMaps(
+                    m =>
+                        m.SourceMember is not null &&
+                        m.SourceMember
+                            .GetCustomAttributes(inherit: true)
+                            .OfType<ReadOnlyAttribute>()
+                            .Any(a => a.IsReadOnly),
+                    (_, mce) => mce.Ignore()
+                );
+
+            e.AddProfile<ApiProfile>();
+            e.AddProfile<LogicProfile>();
+        });
 
         serviceCollection.AddSingleton(BuildJsonSerializerOptions);
 

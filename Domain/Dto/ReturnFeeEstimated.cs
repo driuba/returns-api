@@ -2,9 +2,9 @@ using Returns.Domain.Entities;
 
 namespace Returns.Domain.Dto;
 
-public class ReturnFee
+public class ReturnFeeEstimated
 {
-    public ReturnFee(FeeConfiguration configuration)
+    public ReturnFeeEstimated(FeeConfiguration configuration)
     {
         Configuration = configuration;
     }

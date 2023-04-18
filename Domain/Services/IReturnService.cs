@@ -8,6 +8,8 @@ public interface IReturnService
 
     Task<ValueResponse<Entities.Return>> Delete(int id);
 
+    Task<ReturnEstimated> Estimate(Return returnCandidate);
+
     Task<ValueResponse<Entities.Return>> Update(Entities.Return returnCandidate);
 
     Task<ReturnValidated> Validate(Return returnCandidate);

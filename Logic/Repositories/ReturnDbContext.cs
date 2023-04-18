@@ -23,6 +23,8 @@ public sealed class ReturnDbContext : DbContext
         _sessionService?.CompanyId ??
         throw new InvalidOperationException("Session service is required.");
 
+    private string? _customerId => _sessionService?.CustomerId;
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder
@@ -42,14 +44,67 @@ public sealed class ReturnDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
-            .ApplyConfiguration(new FeeConfigurationConfiguration(fc => fc.Group.CompanyId == _companyId))
-            .ApplyConfiguration(new FeeConfigurationGroupConfiguration(fcg => fcg.CompanyId == _companyId))
-            .ApplyConfiguration(new ReturnConfiguration(r => r.CompanyId == _companyId))
-            .ApplyConfiguration(new ReturnAvailabilityConfiguration(ra => ra.CompanyId == _companyId))
-            .ApplyConfiguration(new ReturnFeeConfiguration(rf => rf.Return.CompanyId == _companyId))
-            .ApplyConfiguration(new ReturnLineConfiguration(rl => rl.Return.CompanyId == _companyId))
-            .ApplyConfiguration(new ReturnLineAttachmentConfiguration(rla => rla.Line.Return.CompanyId == _companyId))
-            .ApplyConfiguration(new ReturnLineDeviceConfiguration(rld => rld.Line.Return.CompanyId == _companyId));
+            .ApplyConfiguration(
+                new FeeConfigurationConfiguration(fc =>
+                    fc.Group.CompanyId == _companyId &&
+                    (
+                        string.IsNullOrEmpty(_customerId) ||
+                        string.IsNullOrEmpty(fc.CustomerId) ||
+                        fc.CustomerId == _customerId
+                    )
+                )
+            )
+            .ApplyConfiguration(
+                new FeeConfigurationGroupConfiguration(fcg => fcg.CompanyId == _companyId)
+            )
+            .ApplyConfiguration(
+                new ReturnConfiguration(r =>
+                    r.CompanyId == _companyId &&
+                    (
+                        string.IsNullOrEmpty(_customerId) ||
+                        r.CustomerId == _customerId
+                    )
+                )
+            )
+            .ApplyConfiguration(
+                new ReturnAvailabilityConfiguration(ra => ra.CompanyId == _companyId)
+            )
+            .ApplyConfiguration(
+                new ReturnFeeConfiguration(rf =>
+                    rf.Return.CompanyId == _companyId &&
+                    (
+                        string.IsNullOrEmpty(_customerId) ||
+                        rf.Return.CustomerId == _customerId
+                    )
+                )
+            )
+            .ApplyConfiguration(
+                new ReturnLineConfiguration(rl =>
+                    rl.Return.CompanyId == _companyId &&
+                    (
+                        string.IsNullOrEmpty(_customerId) ||
+                        rl.Return.CustomerId == _customerId
+                    )
+                )
+            )
+            .ApplyConfiguration(
+                new ReturnLineAttachmentConfiguration(rla =>
+                    rla.Line.Return.CompanyId == _companyId &&
+                    (
+                        string.IsNullOrEmpty(_customerId) ||
+                        rla.Line.Return.CustomerId == _customerId
+                    )
+                )
+            )
+            .ApplyConfiguration(
+                new ReturnLineDeviceConfiguration(rld =>
+                    rld.Line.Return.CompanyId == _companyId &&
+                    (
+                        string.IsNullOrEmpty(_customerId) ||
+                        rld.Line.Return.CustomerId == _customerId
+                    )
+                )
+            );
     }
 
     private void UpdatePropertiesTracking(object? _, EntityEntryEventArgs eventArgs)

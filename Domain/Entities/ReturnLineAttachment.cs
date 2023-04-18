@@ -5,10 +5,9 @@ namespace Returns.Domain.Entities;
 [UsedImplicitly]
 public class ReturnLineAttachment : EntityTrackable
 {
-    public ReturnLineAttachment(string name, string url)
+    public ReturnLineAttachment(string name)
     {
         Name = name;
-        Url = url;
     }
 
     public int Id { get; set; }
@@ -19,7 +18,5 @@ public class ReturnLineAttachment : EntityTrackable
 
     public int ReturnLineId { get; set; }
 
-    public Guid? StorageId { get; set; }
-
-    public string Url { get; set; }
+    public Guid StorageId { get; set; }
 }

@@ -12,6 +12,8 @@ public class Return
 
     public string DeliveryPointId { get; set; }
 
+    public int? Id { get; set; }
+
     public int LabelCount { get; set; }
 
     public IEnumerable<ReturnLine> Lines { get; set; } = Enumerable.Empty<ReturnLine>();

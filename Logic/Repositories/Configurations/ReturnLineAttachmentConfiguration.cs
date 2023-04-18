@@ -35,11 +35,6 @@ public class ReturnLineAttachmentConfiguration : EntityTrackableConfiguration<Re
             .IsRequired(false);
 
         builder
-            .Property(rla => rla.Url)
-            .HasMaxLength(1000)
-            .IsRequired();
-
-        builder
             .HasOne(rla => rla.Line)
             .WithMany(rl => rl.Attachments)
             .HasForeignKey(rla => rla.ReturnLineId)

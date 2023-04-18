@@ -1,7 +1,5 @@
-using System.ComponentModel;
 using System.Reflection;
 using System.Text.Json.Serialization;
-using AutoMapper.Internal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Deltas;
@@ -10,7 +8,6 @@ using Microsoft.AspNetCore.OData.Routing.Conventions;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Returns.Api.Documentation;
-using Returns.Api.Mappings;
 using Returns.Api.Utils;
 using Returns.Domain.Services;
 using Returns.Logic.Services;
@@ -79,25 +76,6 @@ builder.Services
         o.InvalidModelStateResponseFactory = InvalidModelStateHandler.ResponseFactory;
         o.SuppressMapClientErrors = true;
     });
-
-builder.Services.AddAutoMapper(e =>
-{
-    e.AllowNullCollections = true;
-
-    e
-        .Internal()
-        .ForAllPropertyMaps(
-            m =>
-                m.SourceMember is not null &&
-                m.SourceMember
-                    .GetCustomAttributes(inherit: true)
-                    .OfType<ReadOnlyAttribute>()
-                    .Any(a => a.IsReadOnly),
-            (_, mce) => mce.Ignore()
-        );
-
-    e.AddProfile<Profile>();
-});
 
 builder.Services.AddAuthentication(o =>
 {

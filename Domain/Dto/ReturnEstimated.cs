@@ -12,7 +12,7 @@ public class ReturnEstimated
 
     public string DeliveryPointId { get; set; }
 
-    public IEnumerable<ReturnFee> Fees { get; set; } = Enumerable.Empty<ReturnFee>();
+    public IEnumerable<ReturnFeeEstimated> Fees { get; set; } = Enumerable.Empty<ReturnFeeEstimated>();
 
     public int LabelCount { get; set; }
 

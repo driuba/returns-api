@@ -6,5 +6,7 @@ public interface ISessionService
 {
     string CompanyId { get; }
 
+    string? CustomerId { get; }
+
     IPrincipal Principal { get; }
 }
