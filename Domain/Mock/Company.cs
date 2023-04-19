@@ -13,4 +13,6 @@ public class Company
     public virtual ICollection<CompanyCustomer> Customers { get; init; } = default!;
 
     public string Id { get; init; }
+
+    public virtual ICollection<Invoice> Invoices { get; init; } = default!;
 }

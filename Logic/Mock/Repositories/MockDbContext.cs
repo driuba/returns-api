@@ -32,6 +32,8 @@ public sealed class MockDbContext : DbContext
             .ApplyConfiguration(new CompanyConfiguration())
             .ApplyConfiguration(new CompanyCustomerConfiguration())
             .ApplyConfiguration(new CustomerConfiguration())
+            .ApplyConfiguration(new InvoiceConfiguration())
+            .ApplyConfiguration(new InvoiceLineConfiguration())
             .ApplyConfiguration(new ProductConfiguration())
             .ApplyConfiguration(new RegionConfiguration());
     }

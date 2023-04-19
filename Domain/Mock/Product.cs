@@ -14,5 +14,7 @@ public class Product
 
     public string Id { get; init; }
 
+    public virtual ICollection<InvoiceLine> InvoiceLines { get; init; } = default!;
+
     public bool Serviceable { get; init; }
 }

@@ -21,6 +21,8 @@ public class Customer
 
     public string Id { get; init; }
 
+    public virtual ICollection<Invoice> Invoices { get; init; } = default!;
+
     public string Name { get; init; }
 
     public virtual Customer? Parent { get; init; }
