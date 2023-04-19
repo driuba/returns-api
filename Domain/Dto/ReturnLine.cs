@@ -1,3 +1,4 @@
+using Returns.Domain.Entities;
 using Returns.Domain.Enums;
 
 namespace Returns.Domain.Dto;
@@ -12,6 +13,8 @@ public class ReturnLine
     }
 
     public bool ApplyRegistrationFee { get; set; }
+
+    public IEnumerable<ReturnLineAttachment> Attachments { get; set; } = Enumerable.Empty<ReturnLineAttachment>();
 
     public int? FeeConfigurationGroupIdDamagePackage { get; set; }
 

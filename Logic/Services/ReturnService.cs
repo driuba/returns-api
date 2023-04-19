@@ -12,7 +12,9 @@ public class ReturnService : IReturnService
 {
     private readonly ICustomerService _customerService;
     private readonly ReturnDbContext _dbContext;
+    private readonly IInvoiceService _invoiceService;
     private readonly IMapper _mapper;
+    private readonly IProductService _productService;
     private readonly IRegionService _regionService;
     private readonly ISessionService _sessionService;
     private readonly IStorageService _storageService;
@@ -20,7 +22,9 @@ public class ReturnService : IReturnService
     public ReturnService(
         ICustomerService customerService,
         ReturnDbContext dbContext,
+        IInvoiceService invoiceService,
         IMapper mapper,
+        IProductService productService,
         IRegionService regionService,
         ISessionService sessionService,
         IStorageService storageService
@@ -28,7 +32,9 @@ public class ReturnService : IReturnService
     {
         _customerService = customerService;
         _dbContext = dbContext;
+        _invoiceService = invoiceService;
         _mapper = mapper;
+        _productService = productService;
         _regionService = regionService;
         _sessionService = sessionService;
         _storageService = storageService;
@@ -144,7 +150,7 @@ public class ReturnService : IReturnService
         };
     }
 
-    public async Task<ReturnValidated> Validate(Return returnCandidate)
+    public async Task<ReturnValidated> Validate(Return returnCandidate, bool validateAttachments = false)
     {
         var errorsReturn = new List<string>();
 
@@ -234,20 +240,21 @@ public class ReturnService : IReturnService
 
         var returnLineQuantities = returnLines.Select(l => (l.ProductType, l.Quantity));
 
+        var returnLineIdsExcluded = returnLines
+            .Where(rl => rl.Id.HasValue)
+            .Select(rl => rl.Id)
+            .Cast<int>();
+
         if (returnCandidate.Id.HasValue)
         {
-            var returnLineIdsExcluded = returnLines
-                .Where(rl => rl.Id.HasValue)
-                .Select(rl => rl.Id)
-                .Cast<int>();
-
             var returnExisting = await _dbContext
                 .Set<Domain.Entities.Return>()
                 .Where(r => r.Id == returnCandidate.Id)
                 .Select(r => new
                 {
                     Lines = r.Lines
-                        .Where(l => returnLineIdsExcluded.Contains(l.Id))
+                        // ReSharper disable once AccessToModifiedClosure
+                        .Where(l => !returnLineIdsExcluded.Contains(l.Id))
                         .Select(l => new
                         {
                             l.ProductType,
@@ -327,6 +334,7 @@ public class ReturnService : IReturnService
 
             if (validateAttachments && !returnLine.Attachments.Any())
             {
+                // ReSharper disable once ConvertIfStatementToSwitchStatement
                 if (returnLine.ProductType == ReturnProductType.Defective)
                 {
                     errorsReturnLine[returnLine.Reference].Add(
@@ -346,6 +354,7 @@ public class ReturnService : IReturnService
                 errorsReturnLine[returnLine.Reference].Add("Quantity must be a positive integer.");
             }
 
+            // ReSharper disable once InvertIf
             if (!string.IsNullOrEmpty(returnLine.SerialNumber))
             {
                 if (returnLine.Quantity > 1)
@@ -405,6 +414,7 @@ public class ReturnService : IReturnService
                     }
                 }
 
+                // ReSharper disable once InvertIf
                 if (returnLine.FeeConfigurationGroupIdDamageProduct.HasValue)
                 {
                     if (
@@ -440,15 +450,14 @@ public class ReturnService : IReturnService
             return _mapper.Map<ReturnValidated>(returnCandidate);
         }
 
-        // TODO: product mocking
         var products = (
-                await _productService.FilterAsync(
+                await _productService.Filter(
                     returnLines
                         .Select(rl => rl.ProductId)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                 )
             )
-            .ToDictionary(i => i.ItemId, StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(i => i.Id, StringComparer.OrdinalIgnoreCase);
 
         foreach (var returnLine in returnLines.Where(rl => !products.ContainsKey(rl.ProductId)))
         {
@@ -502,230 +511,234 @@ public class ReturnService : IReturnService
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        if (invoiceNumbers.Any())
+        if (!invoiceNumbers.Any())
         {
-            var returnLineIdsExcluded = returnLines
-                .Where(rl => rl.Id.HasValue)
-                .Select(rl => rl.Id)
-                .Cast<int>()
-                .ToList();
+            return _mapper.Map<ReturnValidated>(returnCandidate);
+        }
 
-            var serialNumbers = returnLines
-                .Where(rl => !string.IsNullOrEmpty(rl.SerialNumber))
-                .Select(rl => rl.SerialNumber)
-                .Cast<string>()
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+        returnLineIdsExcluded = returnLines
+            .Where(rl => rl.Id.HasValue)
+            .Select(rl => rl.Id)
+            .Cast<int>()
+            .ToList();
 
-            if (serialNumbers.Any())
+        var serialNumbers = returnLines
+            .Where(rl => !string.IsNullOrEmpty(rl.SerialNumber))
+            .Select(rl => rl.SerialNumber)
+            .Cast<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (serialNumbers.Any())
+        {
+            var serialNumbersRegistered = await _dbContext
+                .Set<Domain.Entities.ReturnLineDevice>()
+                .Where(rld => !returnLineIdsExcluded.Contains(rld.Line.Id))
+                .Where(rld => invoiceNumbers.Contains(rld.Line.InvoiceNumberPurchase))
+                .Where(rld => serialNumbers.Contains(rld.SerialNumber))
+                .Select(rld => rld.SerialNumber)
+                .Distinct()
+                .ToHashSetAsync(StringComparer.OrdinalIgnoreCase);
+
+            var returnLinesFiltered = returnLines.Where(rl =>
+                !string.IsNullOrEmpty(rl.SerialNumber) &&
+                serialNumbersRegistered.Contains(rl.SerialNumber)
+            );
+
+            foreach (var returnLine in returnLinesFiltered)
             {
-                var serialNumbersRegistered = await _dbContext
-                    .Set<Domain.Entities.ReturnLineDevice>()
-                    .Where(rld => !returnLineIdsExcluded.Contains(rld.Line.Id))
-                    .Where(rld => invoiceNumbers.Contains(rld.Line.InvoiceNumberPurchase))
-                    .Where(rld => serialNumbers.Contains(rld.SerialNumber))
-                    .Select(rld => rld.SerialNumber)
-                    .Distinct()
-                    .ToHashSetAsync(StringComparer.OrdinalIgnoreCase);
-
-                var returnLinesFiltered = returnLines.Where(rl =>
-                    !string.IsNullOrEmpty(rl.SerialNumber) &&
-                    serialNumbersRegistered.Contains(rl.SerialNumber)
-                );
-
-                foreach (var returnLine in returnLinesFiltered)
-                {
-                    errorsReturnLine[returnLine.Reference].Add($"Serial number {returnLine.SerialNumber} is already registered for return.");
-                }
+                errorsReturnLine[returnLine.Reference].Add($"Serial number {returnLine.SerialNumber} is already registered for return.");
             }
+        }
 
-            var returnLinesRegistered = await _dbContext
-                .Set<Domain.Entities.ReturnLine>()
-                .Where(rl => !returnLineIdsExcluded.Contains(rl.Id))
-                .Where(rl => invoiceNumbers.Contains(rl.InvoiceNumberPurchase))
-                .Where(rl => products.Keys.Contains(rl.ProductId))
-                .GroupBy(rl => new { rl.InvoiceNumberPurchase, rl.ProductId })
-                .Select(g => new
+        var returnLinesRegistered = await _dbContext
+            .Set<Domain.Entities.ReturnLine>()
+            .Where(rl => !returnLineIdsExcluded.Contains(rl.Id))
+            .Where(rl => invoiceNumbers.Contains(rl.InvoiceNumberPurchase))
+            .Where(rl => products.Keys.Contains(rl.ProductId))
+            .GroupBy(rl => new { rl.InvoiceNumberPurchase, rl.ProductId })
+            .Select(g => new
+            {
+                g.Key.InvoiceNumberPurchase,
+                g.Key.ProductId,
+                Quantity = g.Sum(rl => rl.Quantity)
+            })
+            .ToListAsync();
+
+        var invoiceLines = await _invoiceService.FilterLines(invoiceNumbers, products.Keys);
+
+        var comparer = new ValueTupleEqualityComparer<string, string>(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+
+        var returnLinesMapped = returnLines
+            .GroupBy(rl => (rl.InvoiceNumber, rl.ProductId), comparer)
+            .GroupJoin(
+                returnLinesRegistered,
+                rlg => rlg.Key,
+                rld => (rld.InvoiceNumberPurchase, rld.ProductId),
+                (rlg, rldg) => new
                 {
-                    g.Key.InvoiceNumberPurchase,
-                    g.Key.ProductId,
-                    Quantity = g.Sum(rl => rl.Quantity)
-                })
-                .ToListAsync();
+                    InvoiceNumber = rlg.Key.Item1,
+                    Lines = rlg,
+                    ProductId = rlg.Key.Item2,
+                    QuantityReturn = rlg.Sum(rl => rl.Quantity),
+                    QuantityReturnRegistered = rldg.Sum(rlr => rlr.Quantity)
+                },
+                comparer
+            )
+            .GroupJoin(
+                invoiceLines,
+                rlg => (rlg.InvoiceNumber, rlg.ProductId),
+                il => (il.InvoiceNumber, il.ProductId),
+                (rlg, ilg) =>
+                {
+                    var invoiceLineGroup = ilg.ToList();
 
-            // TODO: fetch invoices and validate against them
-
-            var comparer = new ValueTupleEqualityComparer<string, string>(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
-
-            var returnLinesMapped = returnLines
-                .GroupBy(rl => (rl.InvoiceNumber, rl.ProductId), comparer)
-                .GroupJoin(
-                    returnLinesRegistered,
-                    rlg => rlg.Key,
-                    rld => (rld.InvoiceNumberPurchase, rld.ProductId),
-                    (rlg, rldg) => new
+                    return new
                     {
-                        InvoiceNumber = rlg.Key.Item1,
-                        Lines = rlg,
-                        ProductId = rlg.Key.Item2,
-                        QuantityReturn = rlg.Sum(rl => rl.Quantity),
-                        QuantityReturnRegistered = rldg.Sum(rlr => rlr.Quantity)
-                    },
-                    comparer
-                )
-                .GroupJoin(
-                    invoiceLines,
-                    rlg => (rlg.InvoiceNumber, rlg.ProductId),
-                    il => (il.InvoiceNumber, il.ProductId),
-                    (rlg, ilg) =>
-                    {
-                        var invoiceLineGroup = ilg.ToList();
-
-                        return new
-                        {
-                            rlg.Lines,
-                            rlg.QuantityReturn,
-                            rlg.QuantityReturnRegistered,
-                            InvoiceDate = invoiceLineGroup.FirstOrDefault()?.Created,
-                            QuantityInvoice = invoiceLineGroup.Sum(l => l.Quantity),
-                            SerialNumbersInvoice = invoiceLineGroup
-                                .SelectMany(ilr => ilr.Serials)
-                                .ToHashSet(StringComparer.OrdinalIgnoreCase)
-                        };
-                    },
-                    comparer
-                )
-                .SelectMany(
-                    rlg => rlg.Lines,
-                    (rlg, rl) => new
-                    {
-                        rlg.InvoiceDate,
-                        rlg.QuantityInvoice,
+                        invoiceLineGroup.FirstOrDefault()?.InvoiceDate,
+                        rlg.Lines,
                         rlg.QuantityReturn,
-                        rlg.QuantityReturnDrafted,
-                        rlg.SerialNumbersInvoice,
-                        Line = rl
-                    }
-                )
-                .ToList();
+                        rlg.QuantityReturnRegistered,
+                        QuantityInvoice = invoiceLineGroup.Sum(l => l.Quantity),
+                        SerialNumbersInvoice = invoiceLineGroup
+                            .Select(il => il.SerialNumber)
+                            .Where(sn => !string.IsNullOrEmpty(sn))
+                            .Cast<string>()
+                            .ToHashSet(StringComparer.OrdinalIgnoreCase)
+                    };
+                },
+                comparer
+            )
+            .SelectMany(
+                rlg => rlg.Lines,
+                (rlg, rl) => new
+                {
+                    rlg.InvoiceDate,
+                    rlg.QuantityInvoice,
+                    rlg.QuantityReturn,
+                    rlg.QuantityReturnRegistered,
+                    rlg.SerialNumbersInvoice,
+                    Line = rl
+                }
+            )
+            .ToList();
 
-            foreach (var returnLineMapped in returnLinesMapped)
+        foreach (var returnLineMapped in returnLinesMapped)
+        {
+            if
+            (
+                returnLineMapped.Line.Returned.HasValue &&
+                returnLineMapped.InvoiceDate.HasValue &&
+                returnLineMapped.Line.Returned.Value.Date < returnLineMapped.InvoiceDate.Value.Date
+            )
             {
-                if
-                (
-                    returnLineMapped.Line.Returned.HasValue &&
-                    returnLineMapped.InvoiceDate.HasValue &&
-                    returnLineMapped.Line.Returned.Value.Date < returnLineMapped.InvoiceDate.Value.Date
-                )
-                {
-                    errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                        $"Return date ({returnLineMapped.Line.Returned:yyyy-MM-dd}) must either be empty or later than the invoice date ({returnLineMapped.InvoiceDate:yyyy-MM-dd})."
-                    );
-                }
-
-                if (returnLineMapped.QuantityReturn > returnLineMapped.QuantityInvoice - returnLineMapped.QuantityReturnDrafted)
-                {
-                    if (returnLineMapped.QuantityInvoice == 0)
-                    {
-                        errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                            $"Invoice {returnLineMapped.Line.InvoiceNumber} product {returnLineMapped.Line.ProductId} is not available for return."
-                        );
-                    }
-                    else if (returnLineMapped.QuantityInvoice == returnLineMapped.QuantityReturnDrafted)
-                    {
-                        errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                            $"All invoice {returnLineMapped.Line.InvoiceNumber} products {returnLineMapped.Line.ProductId} are already registered for return."
-                        );
-                    }
-                    else
-                    {
-                        errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                            $"Return quantity is greater than available quantity ({returnLineMapped.QuantityInvoice - returnLineMapped.QuantityReturnDrafted})."
-                        );
-                    }
-                }
-
-                if
-                (
-                    !(
-                        string.IsNullOrEmpty(returnLineMapped.Line.SerialNumber) ||
-                        returnLineMapped.SerialNumbersInvoice.Contains(returnLineMapped.Line.SerialNumber!)
-                    )
-                )
-                {
-                    errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                        $"Serial number {returnLineMapped.Line.SerialNumber} for invoice {returnLineMapped.Line.InvoiceNumber} product {returnLineMapped.Line.ProductId} was not found."
-                    );
-                }
+                errorsReturnLine[returnLineMapped.Line.Reference].Add(
+                    $"Return date ({returnLineMapped.Line.Returned:yyyy-MM-dd}) must either be empty or later than the invoice date ({returnLineMapped.InvoiceDate:yyyy-MM-dd})."
+                );
             }
 
-            returnLinesMapped = returnLinesMapped
-                .Where(rlm => rlm.Line.ProductType == ReturnProductType.New)
-                .Where(rlm =>
-                    rlm.InvoiceDate.HasValue &&
-                    (
-                        !rlm.Line.Returned.HasValue ||
-                        rlm.Line.Returned.Value.Date >= rlm.InvoiceDate.Value.Date
-                    )
-                )
-                .ToList();
-
-            if (returnLinesMapped.Any())
+            if (returnLineMapped.QuantityReturn > returnLineMapped.QuantityInvoice - returnLineMapped.QuantityReturnRegistered)
             {
-                var country = await _regionService.GetCountry(deliveryPoint!.CountryId);
-
-                var countryId = country?.Id;
-                var regionIds = country?.Regions.Select(r => r.Id) ?? Enumerable.Empty<int>();
-
-                if (countryId.HasValue)
+                if (returnLineMapped.QuantityInvoice == 0)
                 {
-                    regionIds = regionIds.Append(countryId.Value);
+                    errorsReturnLine[returnLineMapped.Line.Reference].Add(
+                        $"Invoice {returnLineMapped.Line.InvoiceNumber} product {returnLineMapped.Line.ProductId} is not available for return."
+                    );
                 }
-
-                regionIds = regionIds.ToList();
-
-                var returnAvailabilities = await _dbContext
-                    .Set<Domain.Entities.ReturnAvailability>()
-                    .Where(ra =>
-                        !ra.CountryId.HasValue ||
-                        regionIds.Contains(ra.CountryId.Value)
-                    )
-                    .ToDictionaryAsync(ra => ra.CountryId ?? default(int), ra => ra.Days);
-
-                int availability;
-
-                if (countryId.HasValue && returnAvailabilities.TryGetValue(countryId.Value, out var returnAvailability))
+                else if (returnLineMapped.QuantityInvoice == returnLineMapped.QuantityReturnRegistered)
                 {
-                    availability = returnAvailability;
+                    errorsReturnLine[returnLineMapped.Line.Reference].Add(
+                        $"All invoice {returnLineMapped.Line.InvoiceNumber} products {returnLineMapped.Line.ProductId} are already registered for return."
+                    );
                 }
                 else
                 {
-                    regionIds = regionIds
-                        .Intersect(returnAvailabilities.Keys)
-                        .ToList();
-
-                    if (regionIds.Any())
-                    {
-                        availability = returnAvailabilities[regionIds.First(ri => returnAvailabilities.ContainsKey(ri))];
-                    }
-                    else
-                    {
-                        availability = returnAvailabilities[default(int)];
-                    }
-                }
-
-                returnLinesMapped = returnLinesMapped.Where(rlm =>
-                    rlm.InvoiceDate.HasValue &&
-                    ((rlm.Line.Returned?.Date ?? DateTime.Today) - rlm.InvoiceDate.Value.Date).Days > availability
-                );
-
-                foreach (var returnLineMapped in returnLinesMapped)
-                {
                     errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                        $"Invoice {returnLineMapped.Line.InvoiceNumber} was created more than {availability} days ago ({((returnLineMapped.Line.Returned?.Date ?? DateTime.Today) - returnLineMapped.InvoiceDate!.Value.Date).Days}) and is not eligible for return."
+                        $"Return quantity is greater than available quantity ({returnLineMapped.QuantityInvoice - returnLineMapped.QuantityReturnRegistered})."
                     );
                 }
             }
+
+            if
+            (
+                !(
+                    string.IsNullOrEmpty(returnLineMapped.Line.SerialNumber) ||
+                    returnLineMapped.SerialNumbersInvoice.Contains(returnLineMapped.Line.SerialNumber!)
+                )
+            )
+            {
+                errorsReturnLine[returnLineMapped.Line.Reference].Add(
+                    $"Serial number {returnLineMapped.Line.SerialNumber} for invoice {returnLineMapped.Line.InvoiceNumber} product {returnLineMapped.Line.ProductId} was not found."
+                );
+            }
+        }
+
+        returnLinesMapped = returnLinesMapped
+            .Where(rlm => rlm.Line.ProductType == ReturnProductType.New)
+            .Where(rlm =>
+                rlm.InvoiceDate.HasValue &&
+                (
+                    !rlm.Line.Returned.HasValue ||
+                    rlm.Line.Returned.Value.Date >= rlm.InvoiceDate.Value.Date
+                )
+            )
+            .ToList();
+
+        if (!returnLinesMapped.Any())
+        {
+            return _mapper.Map<ReturnValidated>(returnCandidate);
+        }
+
+        var country = await _regionService.GetCountry(deliveryPoint!.CountryId);
+
+        var countryId = country?.Id;
+        var regionIds = country?.Regions.Select(r => r.Id) ?? Enumerable.Empty<int>();
+
+        if (countryId.HasValue)
+        {
+            regionIds = regionIds.Append(countryId.Value);
+        }
+
+        regionIds = regionIds.ToList();
+
+        var returnAvailabilities = await _dbContext
+            .Set<Domain.Entities.ReturnAvailability>()
+            .Where(ra =>
+                !ra.CountryId.HasValue ||
+                // ReSharper disable once AccessToModifiedClosure
+                regionIds.Contains(ra.CountryId.Value)
+            )
+            .ToDictionaryAsync(ra => ra.CountryId ?? default(int), ra => ra.Days);
+
+        int availability;
+
+        if (countryId.HasValue && returnAvailabilities.TryGetValue(countryId.Value, out var returnAvailability))
+        {
+            availability = returnAvailability;
+        }
+        else
+        {
+            regionIds = regionIds
+                .Intersect(returnAvailabilities.Keys)
+                .ToList();
+
+            availability = regionIds.Any()
+                ? returnAvailabilities[regionIds.First(ri => returnAvailabilities.ContainsKey(ri))]
+                : returnAvailabilities[default(int)];
+        }
+
+        returnLinesMapped = returnLinesMapped
+            .Where(rlm =>
+                rlm.InvoiceDate.HasValue &&
+                ((rlm.Line.Returned?.Date ?? DateTime.Today) - rlm.InvoiceDate.Value.Date).Days > availability
+            )
+            .ToList();
+
+        foreach (var returnLineMapped in returnLinesMapped)
+        {
+            errorsReturnLine[returnLineMapped.Line.Reference].Add(
+                $"Invoice {returnLineMapped.Line.InvoiceNumber} was created more than {availability} days ago ({((returnLineMapped.Line.Returned?.Date ?? DateTime.Today) - returnLineMapped.InvoiceDate!.Value.Date).Days}) and is not eligible for return."
+            );
         }
 
         return _mapper.Map<ReturnValidated>(returnCandidate);

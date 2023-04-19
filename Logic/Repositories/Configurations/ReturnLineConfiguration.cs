@@ -48,7 +48,7 @@ public class ReturnLineConfiguration : EntityTrackableConfiguration<ReturnLine>
         builder
             .Property(rl => rl.ProductId)
             .IsRequired()
-            .HasMaxLength(20);
+            .HasMaxLength(10);
 
         builder
             .Property(rl => rl.ProductType)
