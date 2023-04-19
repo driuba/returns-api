@@ -50,7 +50,5 @@ public sealed class ApiProfile : AutoMapper.Profile
             .ReverseMap();
 
         CreateMap<Domain.Entities.ReturnLineAttachment, Domain.Api.ReturnLineAttachment>().ExplicitExpansion();
-
-        CreateMap<Domain.Entities.ReturnLineDevice, Domain.Api.ReturnLineDevice>().ExplicitExpansion();
     }
 }

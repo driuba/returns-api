@@ -1,4 +1,5 @@
 using Returns.Domain.Dto;
+using Returns.Domain.Dto.Invoices;
 
 namespace Returns.Domain.Services;
 
@@ -12,5 +13,5 @@ public interface IReturnService
 
     Task<ValueResponse<Entities.Return>> Update(Entities.Return returnCandidate);
 
-    Task<ReturnValidated> Validate(Return returnCandidate, bool validateAttachments = false);
+    Task<ReturnValidated> Validate(Return returnCandidate, IEnumerable<InvoiceLine> invoiceLines, bool validateAttachments = false);
 }

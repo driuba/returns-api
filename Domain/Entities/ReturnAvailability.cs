@@ -12,9 +12,9 @@ public class ReturnAvailability : IEntity
 
     public string CompanyId { get; set; }
 
-    public int? CountryId { get; set; }
-
     public int Days { get; set; }
 
     public int Id { get; set; }
+
+    public int? RegionId { get; set; }
 }

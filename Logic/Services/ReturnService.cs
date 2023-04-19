@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Returns.Domain.Dto;
+using Returns.Domain.Dto.Invoices;
 using Returns.Domain.Enums;
 using Returns.Domain.Services;
 using Returns.Logic.Repositories;
@@ -150,7 +151,7 @@ public class ReturnService : IReturnService
         };
     }
 
-    public async Task<ReturnValidated> Validate(Return returnCandidate, bool validateAttachments = false)
+    public async Task<ReturnValidated> Validate(Return returnCandidate, IEnumerable<InvoiceLine> invoiceLines, bool validateAttachments = false)
     {
         var errorsReturn = new List<string>();
 
@@ -450,55 +451,65 @@ public class ReturnService : IReturnService
             return _mapper.Map<ReturnValidated>(returnCandidate);
         }
 
-        var products = (
-                await _productService.Filter(
-                    returnLines
-                        .Select(rl => rl.ProductId)
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                )
+        var products = await _productService
+            .Filter(
+                returnLines
+                    .Select(rl => rl.ProductId)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
             )
-            .ToDictionary(i => i.Id, StringComparer.OrdinalIgnoreCase);
+            .ToListAsync();
 
-        foreach (var returnLine in returnLines.Where(rl => !products.ContainsKey(rl.ProductId)))
+        var returnLinesInvalid = returnLines.ExceptBy(
+            products.Select(p => p.Id),
+            rl => rl.ProductId,
+            StringComparer.OrdinalIgnoreCase
+        );
+
+        foreach (var returnLine in returnLinesInvalid)
         {
             errorsReturnLine[returnLine.Reference].Add($"Product {returnLine.ProductId} was not found.");
         }
 
-        returnLines = returnLines
-            .Where(rl => products.ContainsKey(rl.ProductId))
+        var returnLinesProduct = returnLines
+            .Join(
+                products,
+                rl => rl.ProductId,
+                p => p.Id,
+                (rl, p) => new
+                {
+                    Product = p,
+                    Line = rl
+                },
+                StringComparer.OrdinalIgnoreCase
+            )
             .ToList();
 
-        if (!returnLines.Any())
+        if (!returnLinesProduct.Any())
         {
             return _mapper.Map<ReturnValidated>(returnCandidate);
         }
 
-        foreach (var returnLine in returnLines.Where(rl => products[rl.ProductId].ByOrderOnly))
+        foreach (var returnLineProduct in returnLinesProduct)
         {
-            errorsReturnLine[returnLine.Reference].Add($"Product {returnLine.ProductId} was purchased by order and cannot be returned.");
+            if (returnLineProduct.Product.ByOrderOnly)
+            {
+                errorsReturnLine[returnLineProduct.Line.Reference].Add(
+                    $"Product {returnLineProduct.Product.Id} was purchased by order and cannot be returned."
+                );
+            }
+
+            if (returnLineProduct.Line.ProductType == ReturnProductType.UnderWarranty && returnLineProduct.Product.Serviceable)
+            {
+                errorsReturnLine[returnLineProduct.Line.Reference].Add(
+                    $"Product {returnLineProduct.Product.Id} must be serviced and cannot be returned under warranty."
+                );
+            }
         }
 
-        returnLines = returnLines
-            .Where(rl => !products[rl.ProductId].ByOrderOnly)
-            .ToList();
-
-        if (!returnLines.Any())
-        {
-            return _mapper.Map<ReturnValidated>(returnCandidate);
-        }
-
-        var returnLinesServiceable = returnLines
-            .Where(rl => products[rl.ProductId].Serviceable)
-            .Where(rl => rl.ProductType == ReturnProductType.UnderWarranty)
-            .ToList();
-
-        foreach (var returnLine in returnLinesServiceable)
-        {
-            errorsReturnLine[returnLine.Reference].Add($"Product {returnLine.ProductId} must be serviced and cannot be returned as an RMA product.");
-        }
-
-        returnLines = returnLines
-            .Where(rl => !string.IsNullOrEmpty(rl.InvoiceNumber))
+        returnLines = returnLinesProduct
+            .Where(rlp => !rlp.Product.ByOrderOnly)
+            .Where(rlp => !string.IsNullOrEmpty(rlp.Line.InvoiceNumber))
+            .Select(rlp => rlp.Line)
             .ToList();
 
         if (!returnLines.Any())
@@ -511,10 +522,10 @@ public class ReturnService : IReturnService
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        if (!invoiceNumbers.Any())
-        {
-            return _mapper.Map<ReturnValidated>(returnCandidate);
-        }
+        var productIds = returnLines
+            .Select(rl => rl.ProductId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         returnLineIdsExcluded = returnLines
             .Where(rl => rl.Id.HasValue)
@@ -523,8 +534,8 @@ public class ReturnService : IReturnService
             .ToList();
 
         var serialNumbers = returnLines
-            .Where(rl => !string.IsNullOrEmpty(rl.SerialNumber))
             .Select(rl => rl.SerialNumber)
+            .Where(sn => !string.IsNullOrEmpty(sn))
             .Cast<string>()
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -532,12 +543,17 @@ public class ReturnService : IReturnService
         if (serialNumbers.Any())
         {
             var serialNumbersRegistered = await _dbContext
-                .Set<Domain.Entities.ReturnLineDevice>()
-                .Where(rld => !returnLineIdsExcluded.Contains(rld.Line.Id))
-                .Where(rld => invoiceNumbers.Contains(rld.Line.InvoiceNumberPurchase))
-                .Where(rld => serialNumbers.Contains(rld.SerialNumber))
-                .Select(rld => rld.SerialNumber)
+                .Set<Domain.Entities.ReturnLine>()
+                .Where(rl => !returnLineIdsExcluded.Contains(rl.Id))
+                .Where(rl => invoiceNumbers.Contains(rl.InvoiceNumberPurchase))
+                .Where(rl => productIds.Contains(rl.ProductId))
+                .Where(rl =>
+                    !string.IsNullOrEmpty(rl.SerialNumber) &&
+                    serialNumbers.Contains(rl.SerialNumber)
+                )
+                .Select(rl => rl.SerialNumber)
                 .Distinct()
+                .Cast<string>()
                 .ToHashSetAsync(StringComparer.OrdinalIgnoreCase);
 
             var returnLinesFiltered = returnLines.Where(rl =>
@@ -555,8 +571,12 @@ public class ReturnService : IReturnService
             .Set<Domain.Entities.ReturnLine>()
             .Where(rl => !returnLineIdsExcluded.Contains(rl.Id))
             .Where(rl => invoiceNumbers.Contains(rl.InvoiceNumberPurchase))
-            .Where(rl => products.Keys.Contains(rl.ProductId))
-            .GroupBy(rl => new { rl.InvoiceNumberPurchase, rl.ProductId })
+            .Where(rl => productIds.Contains(rl.ProductId))
+            .GroupBy(rl => new
+            {
+                rl.InvoiceNumberPurchase,
+                rl.ProductId
+            })
             .Select(g => new
             {
                 g.Key.InvoiceNumberPurchase,
@@ -564,8 +584,6 @@ public class ReturnService : IReturnService
                 Quantity = g.Sum(rl => rl.Quantity)
             })
             .ToListAsync();
-
-        var invoiceLines = await _invoiceService.FilterLines(invoiceNumbers, products.Keys);
 
         var comparer = new ValueTupleEqualityComparer<string, string>(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
 
@@ -704,11 +722,11 @@ public class ReturnService : IReturnService
         var returnAvailabilities = await _dbContext
             .Set<Domain.Entities.ReturnAvailability>()
             .Where(ra =>
-                !ra.CountryId.HasValue ||
+                !ra.RegionId.HasValue ||
                 // ReSharper disable once AccessToModifiedClosure
-                regionIds.Contains(ra.CountryId.Value)
+                regionIds.Contains(ra.RegionId.Value)
             )
-            .ToDictionaryAsync(ra => ra.CountryId ?? default(int), ra => ra.Days);
+            .ToDictionaryAsync(ra => ra.RegionId ?? default(int), ra => ra.Days);
 
         int availability;
 

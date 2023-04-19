@@ -21,7 +21,7 @@ public sealed class ReturnDbContext : DbContext
 
     private string _companyId =>
         _sessionService?.CompanyId ??
-        throw new InvalidOperationException("Session service is required.");
+        throw new InvalidOperationException("Session company identifier is required.");
 
     private string? _customerId => _sessionService?.CustomerId;
 
@@ -93,15 +93,6 @@ public sealed class ReturnDbContext : DbContext
                     (
                         string.IsNullOrEmpty(_customerId) ||
                         rla.Line.Return.CustomerId == _customerId
-                    )
-                )
-            )
-            .ApplyConfiguration(
-                new ReturnLineDeviceConfiguration(rld =>
-                    rld.Line.Return.CompanyId == _companyId &&
-                    (
-                        string.IsNullOrEmpty(_customerId) ||
-                        rld.Line.Return.CustomerId == _customerId
                     )
                 )
             );

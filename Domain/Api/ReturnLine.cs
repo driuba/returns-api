@@ -13,8 +13,6 @@ public sealed class ReturnLine : TrackableBase
 
     [ReadOnly(true)] public ICollection<ReturnLineAttachment> Attachments { get; set; } = default!;
 
-    [ReadOnly(true)] public ICollection<ReturnLineDevice> Devices { get; set; } = default!;
-
     [ReadOnly(true)] public ICollection<ReturnFee> Fees { get; set; } = default!;
 
     [ReadOnly(true)] public int Id { get; set; }
@@ -38,6 +36,8 @@ public sealed class ReturnLine : TrackableBase
     [ReadOnly(true)] public Return Return { get; set; } = default!;
 
     public int ReturnId { get; set; }
+
+    [ReadOnly(true)] public string? SerialNumber { get; set; }
 
     [ReadOnly(true)] public ReturnLineState State { get; set; }
 }

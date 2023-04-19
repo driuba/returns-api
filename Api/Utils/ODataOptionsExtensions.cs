@@ -22,7 +22,6 @@ internal static class ODataOptionsExtensions
         builder.EntitySet<Domain.Api.ReturnFee>("returnFees");
         builder.EntitySet<Domain.Api.ReturnLine>("returnLines");
         builder.EntitySet<Domain.Api.ReturnLineAttachment>("returnLineAttachments");
-        builder.EntitySet<Domain.Api.ReturnLineDevice>("returnLineDevices");
 
         return builder.GetEdmModel();
     }

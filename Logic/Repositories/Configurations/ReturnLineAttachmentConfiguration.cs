@@ -32,7 +32,7 @@ public class ReturnLineAttachmentConfiguration : EntityTrackableConfiguration<Re
 
         builder
             .Property(rla => rla.StorageId)
-            .IsRequired(false);
+            .IsRequired();
 
         builder
             .HasOne(rla => rla.Line)

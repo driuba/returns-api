@@ -63,6 +63,11 @@ public class ReturnLineConfiguration : EntityTrackableConfiguration<ReturnLine>
             .IsRequired();
 
         builder
+            .Property(rl => rl.SerialNumber)
+            .IsRequired(false)
+            .HasMaxLength(50);
+
+        builder
             .Property(rl => rl.State)
             .IsRequired();
 
@@ -74,7 +79,11 @@ public class ReturnLineConfiguration : EntityTrackableConfiguration<ReturnLine>
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(rl => new { rl.InvoiceNumberPurchase, rl.ProductId });
+        builder.HasIndex(rl => new
+        {
+            rl.InvoiceNumberPurchase,
+            rl.ProductId
+        });
 
         base.Configure(builder);
     }

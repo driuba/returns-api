@@ -14,8 +14,6 @@ public class ReturnLine : EntityTrackable
 
     public virtual ICollection<ReturnLineAttachment> Attachments { get; set; } = default!;
 
-    public virtual ICollection<ReturnLineDevice> Devices { get; set; } = default!;
-
     public virtual ICollection<ReturnFee> Fees { get; set; } = default!;
 
     public int Id { get; set; }
@@ -39,6 +37,8 @@ public class ReturnLine : EntityTrackable
     public virtual Return Return { get; set; } = default!;
 
     public int ReturnId { get; set; }
+
+    public string? SerialNumber { get; set; }
 
     public ReturnLineState State { get; set; }
 }

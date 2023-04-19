@@ -23,11 +23,6 @@ public class ReturnAvailabilityConfiguration : EntityTypeConfiguration<ReturnAva
             .HasMaxLength(3);
 
         builder
-            .Property(ra => ra.CountryId)
-            .IsRequired(false)
-            .HasMaxLength(2);
-
-        builder
             .Property(ra => ra.Days)
             .IsRequired();
 
@@ -36,7 +31,11 @@ public class ReturnAvailabilityConfiguration : EntityTypeConfiguration<ReturnAva
             .IsRequired();
 
         builder
-            .HasIndex(ra => new { ra.CompanyId, ra.CountryId })
+            .Property(ra => ra.RegionId)
+            .IsRequired(false);
+
+        builder
+            .HasIndex(ra => new { ra.CompanyId, CountryId = ra.RegionId })
             .IsUnique()
             .HasFilter(null);
 
