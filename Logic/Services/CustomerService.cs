@@ -19,8 +19,9 @@ public class CustomerService : ICustomerService
     public Task<Customer?> GetDeliveryPoint(string deliveryPointId)
     {
         return _dbContext
-            .Set<Domain.Mock.Customer>()
-            .Where(c => c.CompanyId == _sessionService.CompanyId)
+            .Set<Domain.Mock.CompanyCustomer>()
+            .Where(cc => cc.CompanyId == _sessionService.CompanyId)
+            .Select(cc => cc.Customer)
             .Where(c =>
                 string.IsNullOrEmpty(_sessionService.CustomerId) ||
                 c.Id == _sessionService.CustomerId ||

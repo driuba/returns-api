@@ -28,8 +28,8 @@ public class FeeConfigurationConfiguration : EntityTrackableConfiguration<FeeCon
 
         builder
             .Property(fc => fc.CustomerId)
-            .HasMaxLength(20)
-            .IsRequired(false);
+            .IsRequired(false)
+            .HasMaxLength(20);
 
         builder
             .Property(fc => fc.Deleted)
@@ -46,7 +46,6 @@ public class FeeConfigurationConfiguration : EntityTrackableConfiguration<FeeCon
 
         builder
             .Property(fc => fc.RegionId)
-            .HasMaxLength(2)
             .IsRequired(false);
 
         builder
@@ -66,6 +65,7 @@ public class FeeConfigurationConfiguration : EntityTrackableConfiguration<FeeCon
             .WithMany(fcg => fcg.Configurations)
             .HasForeignKey(fc => fc.FeeConfigurationGroupId)
             .HasPrincipalKey(fcg => fcg.Id)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
         builder

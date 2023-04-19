@@ -22,13 +22,13 @@ public abstract class EntityTrackableConfiguration<T> : EntityTypeConfiguration<
 
         builder
             .Property(et => et.UserCreated)
-            .HasMaxLength(30)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(30);
 
         builder
             .Property(et => et.UserModified)
-            .HasMaxLength(30)
-            .IsRequired(false);
+            .IsRequired(false)
+            .HasMaxLength(30);
 
         base.Configure(builder);
     }

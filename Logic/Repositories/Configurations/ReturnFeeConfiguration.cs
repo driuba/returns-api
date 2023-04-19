@@ -27,8 +27,8 @@ public class ReturnFeeConfiguration : EntityTrackableConfiguration<ReturnFee>
 
         builder
             .Property(rf => rf.ProductId)
-            .HasMaxLength(20)
-            .IsRequired(false);
+            .IsRequired(false)
+            .HasMaxLength(20);
 
         builder
             .Property(rf => rf.ReturnId)
@@ -47,6 +47,7 @@ public class ReturnFeeConfiguration : EntityTrackableConfiguration<ReturnFee>
             .WithMany(f => f.Fees)
             .HasForeignKey(rf => rf.FeeConfigurationId)
             .HasPrincipalKey(f => f.Id)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
 
         builder
@@ -54,6 +55,7 @@ public class ReturnFeeConfiguration : EntityTrackableConfiguration<ReturnFee>
             .WithMany(rl => rl.Fees)
             .HasForeignKey(rf => rf.ReturnLineId)
             .HasPrincipalKey(rl => rl.Id)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder
@@ -61,6 +63,7 @@ public class ReturnFeeConfiguration : EntityTrackableConfiguration<ReturnFee>
             .WithMany(r => r.Fees)
             .HasForeignKey(rf => rf.ReturnId)
             .HasPrincipalKey(r => r.Id)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
         base.Configure(builder);

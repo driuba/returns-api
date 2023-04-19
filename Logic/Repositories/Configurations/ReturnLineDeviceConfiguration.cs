@@ -27,14 +27,15 @@ public class ReturnLineDeviceConfiguration : EntityTrackableConfiguration<Return
 
         builder
             .Property(rld => rld.SerialNumber)
-            .HasMaxLength(50)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(50);
 
         builder
             .HasOne(rld => rld.Line)
             .WithMany(rl => rl.Devices)
             .HasForeignKey(rld => rld.ReturnLineId)
             .HasPrincipalKey(rl => rl.Id)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
 

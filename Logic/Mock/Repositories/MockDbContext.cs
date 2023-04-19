@@ -29,7 +29,10 @@ public sealed class MockDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
+            .ApplyConfiguration(new CompanyConfiguration())
+            .ApplyConfiguration(new CompanyCustomerConfiguration())
             .ApplyConfiguration(new CustomerConfiguration())
+            .ApplyConfiguration(new ProductConfiguration())
             .ApplyConfiguration(new RegionConfiguration());
     }
 }

@@ -19,8 +19,8 @@ public class FeeConfigurationGroupConfiguration : EntityTypeConfiguration<FeeCon
 
         builder
             .Property(fcg => fcg.CompanyId)
-            .HasMaxLength(3)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(3);
 
         builder
             .Property(fcg => fcg.DelayDays)
@@ -28,8 +28,8 @@ public class FeeConfigurationGroupConfiguration : EntityTypeConfiguration<FeeCon
 
         builder
             .Property(fcg => fcg.Description)
-            .HasMaxLength(500)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(500);
 
         builder
             .Property(fcg => fcg.Id)
@@ -37,8 +37,8 @@ public class FeeConfigurationGroupConfiguration : EntityTypeConfiguration<FeeCon
 
         builder
             .Property(fcg => fcg.Name)
-            .HasMaxLength(50)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(50);
 
         builder
             .Property(fcg => fcg.Order)

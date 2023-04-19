@@ -19,18 +19,18 @@ public class ReturnConfiguration : EntityTrackableConfiguration<Return>
 
         builder
             .Property(r => r.CompanyId)
-            .HasMaxLength(3)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(3);
 
         builder
             .Property(r => r.CustomerId)
-            .HasMaxLength(20)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(20);
 
         builder
             .Property(r => r.DeliveryPointId)
-            .HasMaxLength(20)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(20);
 
         builder
             .Property(r => r.Id)
@@ -42,13 +42,13 @@ public class ReturnConfiguration : EntityTrackableConfiguration<Return>
 
         builder
             .Property(r => r.Number)
-            .HasMaxLength(20)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(20);
 
         builder
             .Property(r => r.RmaNumber)
-            .HasMaxLength(20)
-            .IsRequired(false);
+            .IsRequired(false)
+            .HasMaxLength(20);
 
         builder
             .Property(r => r.State)

@@ -19,13 +19,13 @@ public class ReturnAvailabilityConfiguration : EntityTypeConfiguration<ReturnAva
 
         builder
             .Property(ra => ra.CompanyId)
-            .HasMaxLength(3)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(3);
 
         builder
             .Property(ra => ra.CountryId)
-            .HasMaxLength(2)
-            .IsRequired(false);
+            .IsRequired(false)
+            .HasMaxLength(2);
 
         builder
             .Property(ra => ra.Days)

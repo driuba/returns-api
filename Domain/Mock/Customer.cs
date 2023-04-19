@@ -5,16 +5,15 @@ namespace Returns.Domain.Mock;
 [UsedImplicitly]
 public class Customer
 {
-    public Customer(string companyId, string id, string name)
+    public Customer(string id, string name)
     {
-        CompanyId = companyId;
         Id = id;
         Name = name;
     }
 
     public virtual ICollection<Customer> Children { get; init; } = default!;
 
-    public string CompanyId { get; init; }
+    public virtual ICollection<CompanyCustomer> Companies { get; init; } = default!;
 
     public virtual Region Country { get; init; } = default!;
 

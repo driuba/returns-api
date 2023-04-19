@@ -23,23 +23,23 @@ public class ReturnLineConfiguration : EntityTrackableConfiguration<ReturnLine>
 
         builder
             .Property(rl => rl.InvoiceNumberPurchase)
-            .HasMaxLength(20)
-            .IsRequired(false);
+            .IsRequired(false)
+            .HasMaxLength(20);
 
         builder
             .Property(rl => rl.InvoiceNumberReturn)
-            .HasMaxLength(20)
-            .IsRequired(false);
+            .IsRequired(false)
+            .HasMaxLength(20);
 
         builder
             .Property(rl => rl.NoteReturn)
-            .HasMaxLength(500)
-            .IsRequired(false);
+            .IsRequired(false)
+            .HasMaxLength(500);
 
         builder
             .Property(rl => rl.NoteResponse)
-            .HasMaxLength(500)
-            .IsRequired(false);
+            .IsRequired(false)
+            .HasMaxLength(500);
 
         builder
             .Property(rl => rl.PriceUnit)
@@ -47,8 +47,8 @@ public class ReturnLineConfiguration : EntityTrackableConfiguration<ReturnLine>
 
         builder
             .Property(rl => rl.ProductId)
-            .HasMaxLength(20)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(20);
 
         builder
             .Property(rl => rl.ProductType)
@@ -71,6 +71,7 @@ public class ReturnLineConfiguration : EntityTrackableConfiguration<ReturnLine>
             .WithMany(r => r.Lines)
             .HasForeignKey(rl => rl.ReturnId)
             .HasPrincipalKey(r => r.Id)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(rl => new { rl.InvoiceNumberPurchase, rl.ProductId });

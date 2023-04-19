@@ -23,8 +23,8 @@ public class ReturnLineAttachmentConfiguration : EntityTrackableConfiguration<Re
 
         builder
             .Property(rla => rla.Name)
-            .HasMaxLength(500)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(500);
 
         builder
             .Property(rla => rla.ReturnLineId)
@@ -39,6 +39,7 @@ public class ReturnLineAttachmentConfiguration : EntityTrackableConfiguration<Re
             .WithMany(rl => rl.Attachments)
             .HasForeignKey(rla => rla.ReturnLineId)
             .HasPrincipalKey(rl => rl.Id)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
         base.Configure(builder);

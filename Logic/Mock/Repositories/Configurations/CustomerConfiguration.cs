@@ -10,16 +10,7 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
     {
         builder.ToTable("Customers");
 
-        builder.HasKey(c => new
-        {
-            c.CompanyId,
-            c.Id
-        });
-
-        builder
-            .Property(c => c.CompanyId)
-            .IsRequired()
-            .HasMaxLength(3);
+        builder.HasKey(c => c.Id);
 
         builder
             .Property(c => c.CountryId)
@@ -44,12 +35,16 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
             .HasOne(c => c.Parent)
             .WithMany(c => c.Children)
             .HasForeignKey(c => c.ParentId)
-            .HasPrincipalKey(c => c.Id);
+            .HasPrincipalKey(c => c.Id)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder
             .HasOne(c => c.Country)
             .WithMany(r => r.Customers)
             .HasForeignKey(c => c.CountryId)
-            .HasPrincipalKey(r => r.Id);
+            .HasPrincipalKey(r => r.Id)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
