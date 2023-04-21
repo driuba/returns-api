@@ -41,15 +41,19 @@ public class ReturnsController : ControllerBase
     [HttpPost("returns/estimate")]
     public async Task<IActionResult> Estimate(string companyId, ReturnRequest returnCandidate)
     {
-        var returnEstimated = await _returnService.Estimate(
+        var response = await _returnService.Estimate(
             _mapper.Map<Domain.Dto.Return>(returnCandidate)
         );
 
-        return StatusCode(
-            returnEstimated.Messages.Any() || returnEstimated.Lines.Any(l => l.Messages.Any())
-                ? StatusCodes.Status400BadRequest
-                : StatusCodes.Status200OK,
-            _mapper.Map<ReturnEstimated>(returnEstimated)
+        if (response.Success)
+        {
+            return Ok(
+                _mapper.Map<ReturnEstimated>(response.Value)
+            );
+        }
+
+        return BadRequest(
+            _mapper.Map<Response>(response)
         );
     }
 

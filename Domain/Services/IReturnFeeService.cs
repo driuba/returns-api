@@ -9,10 +9,5 @@ public interface IReturnFeeService
 {
     ReturnEstimated Calculate(ReturnEstimated returnEstimated, IEnumerable<InvoiceLine> invoiceLines);
 
-    Task<ReturnEstimated> Resolve(
-        ReturnValidated returnValidated,
-        Country? country,
-        Customer deliveryPoint,
-        IEnumerable<InvoiceLine> invoiceLines
-    );
+    Task<ReturnEstimated> Resolve(ReturnValidated returnValidated, Country? country, IEnumerable<InvoiceLine> invoiceLines);
 }

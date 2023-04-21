@@ -1,5 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Returns.Domain.Dto;
 using Returns.Domain.Dto.Customers;
 using Returns.Domain.Dto.Invoices;
@@ -13,32 +15,42 @@ namespace Returns.Logic.Services;
 
 public class ReturnService : IReturnService
 {
+    private readonly IConfiguration _configuration;
     private readonly ICustomerService _customerService;
     private readonly ReturnDbContext _dbContext;
     private readonly IInvoiceService _invoiceService;
+    private readonly ILogger _logger;
     private readonly IMapper _mapper;
     private readonly IProductService _productService;
     private readonly IRegionService _regionService;
+    private readonly IReturnFeeService _returnFeeService;
     private readonly ISessionService _sessionService;
     private readonly IStorageService _storageService;
 
     public ReturnService(
+        IConfiguration configuration,
         ICustomerService customerService,
         ReturnDbContext dbContext,
         IInvoiceService invoiceService,
+        // ReSharper disable once SuggestBaseTypeForParameterInConstructor
+        ILogger<ReturnService> logger,
         IMapper mapper,
         IProductService productService,
         IRegionService regionService,
+        IReturnFeeService returnFeeService,
         ISessionService sessionService,
         IStorageService storageService
     )
     {
+        _configuration = configuration;
         _customerService = customerService;
         _dbContext = dbContext;
         _invoiceService = invoiceService;
+        _logger = logger;
         _mapper = mapper;
         _productService = productService;
         _regionService = regionService;
+        _returnFeeService = returnFeeService;
         _sessionService = sessionService;
         _storageService = storageService;
     }
@@ -57,15 +69,17 @@ public class ReturnService : IReturnService
 
         var country = await _regionService.GetCountry(deliveryPoint.CountryId);
 
-        var invoiceLines = await _invoiceService.FilterLines(
-            returnCandidate.CustomerId,
-            returnCandidate.Lines
-                .Select(l => l.InvoiceNumber)
-                .Distinct(StringComparer.OrdinalIgnoreCase),
-            returnCandidate.Lines
-                .Select(l => l.ProductId)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-        );
+        var invoiceLines = await _invoiceService
+            .FilterLines(
+                returnCandidate.CustomerId,
+                returnCandidate.Lines
+                    .Select(l => l.InvoiceNumber)
+                    .Distinct(StringComparer.OrdinalIgnoreCase),
+                returnCandidate.Lines
+                    .Select(l => l.ProductId)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+            )
+            .ToListAsync();
 
         var returnValidated = await Validate(
             returnCandidate,
@@ -81,12 +95,56 @@ public class ReturnService : IReturnService
             {
                 Message = "One or more validation errors occured.",
                 Messages = returnValidated.Messages.Union(
-                    returnValidated.Lines.SelectMany(l => l.Messages)
+                    returnValidated.Lines.Select(l => $"Line {l.Reference}: {l.Messages}")
                 )
             };
         }
 
-        throw new NotImplementedException();
+        var returnEstimated = await _returnFeeService.Resolve(
+            returnValidated,
+            country,
+            invoiceLines
+        );
+
+        var returnEntity = _mapper.Map<Domain.Entities.Return>(
+            _returnFeeService.Calculate(returnEstimated, invoiceLines)
+        );
+
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+
+        try
+        {
+            _dbContext
+                .Set<Domain.Entities.Return>()
+                .Add(returnEntity);
+
+            await _dbContext.SaveChangesAsync();
+
+            var prefix = _configuration["ReturnNumberPrefix"] ?? string.Empty;
+
+            returnEntity.Number = $"{prefix}{returnEntity.Id.ToString($"D{10 - prefix.Length}")}";
+
+            await _dbContext.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to save the return.");
+
+            await transaction.RollbackAsync();
+
+            return new ValueResponse<Domain.Entities.Return>
+            {
+                Message = "Failed to save the return."
+            };
+        }
+
+        return new ValueResponse<Domain.Entities.Return>
+        {
+            Success = true,
+            Value = returnEntity
+        };
     }
 
     public async Task<ValueResponse<Domain.Entities.Return>> Delete(int id)
@@ -147,9 +205,47 @@ public class ReturnService : IReturnService
         };
     }
 
-    public Task<ReturnEstimated> Estimate(Return returnCandidate)
+    public async Task<ValueResponse<ReturnEstimated>> Estimate(Return returnCandidate)
     {
-        throw new NotImplementedException();
+        var deliveryPoint = await _customerService.GetDeliveryPoint(returnCandidate.DeliveryPointId);
+
+        if (deliveryPoint is null)
+        {
+            return new ValueResponse<ReturnEstimated>
+            {
+                Message = $"Delivery point {returnCandidate.DeliveryPointId} was not found."
+            };
+        }
+
+        var country = await _regionService.GetCountry(deliveryPoint.CountryId);
+
+        var invoiceLines = await _invoiceService
+            .FilterLines(
+                returnCandidate.CustomerId,
+                returnCandidate.Lines
+                    .Select(l => l.InvoiceNumber)
+                    .Distinct(StringComparer.OrdinalIgnoreCase),
+                returnCandidate.Lines
+                    .Select(l => l.ProductId)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+            )
+            .ToListAsync();
+
+        var returnValidated = await Validate(
+            returnCandidate,
+            country,
+            deliveryPoint,
+            invoiceLines,
+            validateAttachments: false
+        );
+
+        var returnEstimated = await _returnFeeService.Resolve(returnValidated, country, invoiceLines);
+
+        return new ValueResponse<ReturnEstimated>
+        {
+            Success = true,
+            Value = _returnFeeService.Calculate(returnEstimated, invoiceLines)
+        };
     }
 
     public async Task<ValueResponse<Domain.Entities.Return>> Update(Domain.Entities.Return returnCandidate)

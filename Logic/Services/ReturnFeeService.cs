@@ -1,7 +1,6 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Returns.Domain.Dto;
-using Returns.Domain.Dto.Customers;
 using Returns.Domain.Dto.Invoices;
 using Returns.Domain.Dto.Regions;
 using Returns.Domain.Enums;
@@ -174,12 +173,7 @@ public class ReturnFeeService : IReturnFeeService
         );
     }
 
-    public async Task<ReturnEstimated> Resolve(
-        ReturnValidated returnValidated,
-        Country? country,
-        Customer deliveryPoint,
-        IEnumerable<InvoiceLine> invoiceLines
-    )
+    public async Task<ReturnEstimated> Resolve(ReturnValidated returnValidated, Country? country, IEnumerable<InvoiceLine> invoiceLines)
     {
         var feesReturn = new List<ReturnFeeEstimated>();
         var feesReturnLine = new List<(string Reference, ReturnFeeEstimated Fee)>();
@@ -224,7 +218,7 @@ public class ReturnFeeService : IReturnFeeService
             );
         }
 
-        var customerId = deliveryPoint.CustomerId;
+        var customerId = returnValidated.CustomerId;
         var countryId = country?.Id;
         var regionIds = country?.Regions.Select(r => r.Id) ?? Enumerable.Empty<int>();
 
