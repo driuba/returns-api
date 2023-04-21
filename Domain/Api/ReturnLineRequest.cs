@@ -16,8 +16,6 @@ public class ReturnLineRequest
 
     [UsedImplicitly] public int? FeeConfigurationGroupIdDamageProduct { get; set; }
 
-    [UsedImplicitly] public int? Id { get; set; }
-
     [UsedImplicitly] public string InvoiceNumber { get; set; }
 
     [UsedImplicitly] public string? Note { get; set; }

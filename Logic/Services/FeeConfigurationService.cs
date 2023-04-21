@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Returns.Domain.Dto;
 using Returns.Domain.Entities;
@@ -180,6 +181,47 @@ public class FeeConfigurationService : IFeeConfigurationService
             Success = true,
             Value = feeConfiguration
         };
+    }
+
+    [SuppressMessage("Performance", "CA1822:Mark members as static")]
+    public FeeConfiguration? Resolve(IEnumerable<FeeConfiguration> configurations, string? customerId, int? countryId, IEnumerable<int> regionIds)
+    {
+        configurations = configurations.ToList();
+
+        if (!string.IsNullOrEmpty(customerId))
+        {
+            var configuration = configurations.SingleOrDefault(c => string.Equals(c.CustomerId, customerId, StringComparison.OrdinalIgnoreCase));
+
+            if (configuration is not null)
+            {
+                return configuration;
+            }
+        }
+
+        if (countryId.HasValue)
+        {
+            var configuration = configurations.SingleOrDefault(c => c.RegionId == countryId);
+
+            if (configuration is not null)
+            {
+                return configuration;
+            }
+        }
+
+        foreach (var regionId in regionIds)
+        {
+            var configuration = configurations.SingleOrDefault(c => c.RegionId == regionId);
+
+            if (configuration is not null)
+            {
+                return configuration;
+            }
+        }
+
+        return configurations.SingleOrDefault(c =>
+            !c.RegionId.HasValue &&
+            string.IsNullOrEmpty(c.CustomerId)
+        );
     }
 
     public async Task<ValueResponse<FeeConfiguration>> Update(FeeConfiguration feeConfigurationCandidate)

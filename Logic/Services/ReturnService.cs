@@ -1,7 +1,9 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Returns.Domain.Dto;
+using Returns.Domain.Dto.Customers;
 using Returns.Domain.Dto.Invoices;
+using Returns.Domain.Dto.Regions;
 using Returns.Domain.Enums;
 using Returns.Domain.Services;
 using Returns.Logic.Repositories;
@@ -41,8 +43,49 @@ public class ReturnService : IReturnService
         _storageService = storageService;
     }
 
-    public Task<ValueResponse<Domain.Entities.Return>> Create(Return returnCandidate)
+    public async Task<ValueResponse<Domain.Entities.Return>> Create(Return returnCandidate)
     {
+        var deliveryPoint = await _customerService.GetDeliveryPoint(returnCandidate.DeliveryPointId);
+
+        if (deliveryPoint is null)
+        {
+            return new ValueResponse<Domain.Entities.Return>
+            {
+                Message = $"Delivery point {returnCandidate.DeliveryPointId} was not found."
+            };
+        }
+
+        var country = await _regionService.GetCountry(deliveryPoint.CountryId);
+
+        var invoiceLines = await _invoiceService.FilterLines(
+            returnCandidate.CustomerId,
+            returnCandidate.Lines
+                .Select(l => l.InvoiceNumber)
+                .Distinct(StringComparer.OrdinalIgnoreCase),
+            returnCandidate.Lines
+                .Select(l => l.ProductId)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+        );
+
+        var returnValidated = await Validate(
+            returnCandidate,
+            country,
+            deliveryPoint,
+            invoiceLines,
+            validateAttachments: false
+        );
+
+        if (returnValidated.Messages.Any() || returnValidated.Lines.Any(l => l.Messages.Any()))
+        {
+            return new ValueResponse<Domain.Entities.Return>
+            {
+                Message = "One or more validation errors occured.",
+                Messages = returnValidated.Messages.Union(
+                    returnValidated.Lines.SelectMany(l => l.Messages)
+                )
+            };
+        }
+
         throw new NotImplementedException();
     }
 
@@ -151,26 +194,26 @@ public class ReturnService : IReturnService
         };
     }
 
-    public async Task<ReturnValidated> Validate(Return returnCandidate, IEnumerable<InvoiceLine> invoiceLines, bool validateAttachments = false)
+    public async Task<ReturnValidated> Validate(
+        Return returnCandidate,
+        Country? country,
+        Customer deliveryPoint,
+        IEnumerable<InvoiceLine> invoiceLines,
+        bool validateAttachments
+    )
     {
         var errorsReturn = new List<string>();
-
-        var errorsReturnLine = returnCandidate.Lines
-            .Select(rl => rl.Reference)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                r => r,
-                _ => new List<string>(),
-                StringComparer.OrdinalIgnoreCase
-            );
+        var errorsReturnLine = new List<(string Reference, string Message)>();
 
         if (string.IsNullOrEmpty(returnCandidate.CustomerId))
         {
             errorsReturn.Add("Customer identifier is required.");
         }
         else if (
-            string.IsNullOrEmpty(_sessionService.CustomerId) ||
-            !string.Equals(returnCandidate.CustomerId, _sessionService.CustomerId, StringComparison.OrdinalIgnoreCase)
+            !(
+                string.IsNullOrEmpty(_sessionService.CustomerId) ||
+                string.Equals(returnCandidate.CustomerId, _sessionService.CustomerId, StringComparison.OrdinalIgnoreCase)
+            )
         )
         {
             errorsReturn.Add($"Customer {returnCandidate.CustomerId} is not valid for return.");
@@ -193,23 +236,39 @@ public class ReturnService : IReturnService
 
         if (errorsReturn.Any())
         {
-            return _mapper.Map<ReturnValidated>(returnCandidate);
+            return _mapper.Map<ReturnValidated>(
+                returnCandidate,
+                moo =>
+                {
+                    moo.Items["errorsReturn"] = errorsReturn;
+                    moo.Items["errorsReturnLine"] = errorsReturnLine.ToLookup(
+                        erl => erl.Reference,
+                        erl => erl.Message,
+                        StringComparer.OrdinalIgnoreCase
+                    );
+                }
+            );
         }
 
-        var deliveryPoint = await _customerService.GetDeliveryPoint(returnCandidate.DeliveryPointId);
-
-        if (deliveryPoint is null)
-        {
-            errorsReturn.Add($"Delivery point {returnCandidate.DeliveryPointId} was not found.");
-        }
-        else if (!string.Equals(returnCandidate.CustomerId, deliveryPoint.CustomerId, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(returnCandidate.CustomerId, deliveryPoint.CustomerId, StringComparison.OrdinalIgnoreCase))
         {
             errorsReturn.Add($"Delivery point {returnCandidate.DeliveryPointId} does not belong to customer {returnCandidate.CustomerId}.");
         }
 
         if (errorsReturn.Any())
         {
-            return _mapper.Map<ReturnValidated>(returnCandidate);
+            return _mapper.Map<ReturnValidated>(
+                returnCandidate,
+                moo =>
+                {
+                    moo.Items["errorsReturn"] = errorsReturn;
+                    moo.Items["errorsReturnLine"] = errorsReturnLine.ToLookup(
+                        erl => erl.Reference,
+                        erl => erl.Message,
+                        StringComparer.OrdinalIgnoreCase
+                    );
+                }
+            );
         }
 
         IEnumerable<ReturnLine> returnLines = returnCandidate.Lines.ToList();
@@ -221,10 +280,9 @@ public class ReturnService : IReturnService
             .Select(g => g.Key)
             .ToList();
 
-        foreach (var referenceDuplicated in referencesDuplicated)
-        {
-            errorsReturnLine[referenceDuplicated].Add($"Return line reference {referenceDuplicated} has duplicates.");
-        }
+        errorsReturnLine.AddRange(
+            referencesDuplicated.Select(rd => (rd, $"Return line reference {rd} has duplicates."))
+        );
 
         returnLines = returnLines
             .ExceptBy(
@@ -236,7 +294,18 @@ public class ReturnService : IReturnService
 
         if (!returnLines.Any())
         {
-            return _mapper.Map<ReturnValidated>(returnCandidate);
+            return _mapper.Map<ReturnValidated>(
+                returnCandidate,
+                moo =>
+                {
+                    moo.Items["errorsReturn"] = errorsReturn;
+                    moo.Items["errorsReturnLine"] = errorsReturnLine.ToLookup(
+                        erl => erl.Reference,
+                        erl => erl.Message,
+                        StringComparer.OrdinalIgnoreCase
+                    );
+                }
+            );
         }
 
         var returnLineQuantities = returnLines.Select(l => (l.ProductType, l.Quantity));
@@ -318,19 +387,22 @@ public class ReturnService : IReturnService
                 )
             )
             {
-                errorsReturnLine[returnLine.Reference].Add(
-                    $"Return line with product type {returnLine.ProductType} must not have damage levels defined."
+                errorsReturnLine.Add(
+                    (
+                        returnLine.Reference,
+                        $"Return line with product type {returnLine.ProductType} must not have damage levels defined."
+                    )
                 );
             }
 
             if (string.IsNullOrEmpty(returnLine.InvoiceNumber))
             {
-                errorsReturnLine[returnLine.Reference].Add("Invoice number is required.");
+                errorsReturnLine.Add((returnLine.Reference, "Invoice number is required."));
             }
 
             if (string.IsNullOrEmpty(returnLine.ProductId))
             {
-                errorsReturnLine[returnLine.Reference].Add("Product identifier is required.");
+                errorsReturnLine.Add((returnLine.Reference, "Product identifier is required."));
             }
 
             if (validateAttachments && !returnLine.Attachments.Any())
@@ -338,21 +410,27 @@ public class ReturnService : IReturnService
                 // ReSharper disable once ConvertIfStatementToSwitchStatement
                 if (returnLine.ProductType == ReturnProductType.Defective)
                 {
-                    errorsReturnLine[returnLine.Reference].Add(
-                        $"Return line with product type {returnLine.ProductType} must have a proof of defect attached."
+                    errorsReturnLine.Add(
+                        (
+                            returnLine.Reference,
+                            $"Return line with product type {returnLine.ProductType} must have a proof of defect attached."
+                        )
                     );
                 }
                 else if (returnLine.ProductType == ReturnProductType.Serviced)
                 {
-                    errorsReturnLine[returnLine.Reference].Add(
-                        $"Return line with product type {returnLine.ProductType} must have a service act attached."
+                    errorsReturnLine.Add(
+                        (
+                            returnLine.Reference,
+                            $"Return line with product type {returnLine.ProductType} must have a service act attached."
+                        )
                     );
                 }
             }
 
             if (returnLine.Quantity <= 0)
             {
-                errorsReturnLine[returnLine.Reference].Add("Quantity must be a positive integer.");
+                errorsReturnLine.Add((returnLine.Reference, "Quantity must be a positive integer."));
             }
 
             // ReSharper disable once InvertIf
@@ -360,12 +438,12 @@ public class ReturnService : IReturnService
             {
                 if (returnLine.Quantity > 1)
                 {
-                    errorsReturnLine[returnLine.Reference].Add($"Product {returnLine.SerialNumber} must have quantity of one.");
+                    errorsReturnLine.Add((returnLine.Reference, $"Product {returnLine.SerialNumber} must have quantity of one."));
                 }
 
                 if (serialNumbersDuplicated.Contains(returnLine.SerialNumber))
                 {
-                    errorsReturnLine[returnLine.Reference].Add($"Serial number {returnLine.SerialNumber} has duplicates.");
+                    errorsReturnLine.Add((returnLine.Reference, $"Serial number {returnLine.SerialNumber} has duplicates."));
                 }
             }
         }
@@ -402,15 +480,21 @@ public class ReturnService : IReturnService
                     {
                         if (feeConfigurationGroup.Type != FeeConfigurationGroupType.DamagePackage)
                         {
-                            errorsReturnLine[returnLine.Reference].Add(
-                                $"Return line has been assigned an invalid package damage level of {feeConfigurationGroup.Id}."
+                            errorsReturnLine.Add(
+                                (
+                                    returnLine.Reference,
+                                    $"Return line has been assigned an invalid package damage level of {feeConfigurationGroup.Id}."
+                                )
                             );
                         }
                     }
                     else
                     {
-                        errorsReturnLine[returnLine.Reference].Add(
-                            $"Package damage level {returnLine.FeeConfigurationGroupIdDamagePackage} was not found."
+                        errorsReturnLine.Add(
+                            (
+                                returnLine.Reference,
+                                $"Package damage level {returnLine.FeeConfigurationGroupIdDamagePackage} was not found."
+                            )
                         );
                     }
                 }
@@ -427,15 +511,21 @@ public class ReturnService : IReturnService
                     {
                         if (feeConfigurationGroup.Type != FeeConfigurationGroupType.DamageProduct)
                         {
-                            errorsReturnLine[returnLine.Reference].Add(
-                                $"Return line has been assigned an invalid product damage level of {feeConfigurationGroup.Id}."
+                            errorsReturnLine.Add(
+                                (
+                                    returnLine.Reference,
+                                    $"Return line has been assigned an invalid product damage level of {feeConfigurationGroup.Id}."
+                                )
                             );
                         }
                     }
                     else
                     {
-                        errorsReturnLine[returnLine.Reference].Add(
-                            $"Product damage level {returnLine.FeeConfigurationGroupIdDamageProduct.Value} was not found."
+                        errorsReturnLine.Add(
+                            (
+                                returnLine.Reference,
+                                $"Product damage level {returnLine.FeeConfigurationGroupIdDamageProduct.Value} was not found."
+                            )
                         );
                     }
                 }
@@ -448,7 +538,18 @@ public class ReturnService : IReturnService
 
         if (!returnLines.Any())
         {
-            return _mapper.Map<ReturnValidated>(returnCandidate);
+            return _mapper.Map<ReturnValidated>(
+                returnCandidate,
+                moo =>
+                {
+                    moo.Items["errorsReturn"] = errorsReturn;
+                    moo.Items["errorsReturnLine"] = errorsReturnLine.ToLookup(
+                        erl => erl.Reference,
+                        erl => erl.Message,
+                        StringComparer.OrdinalIgnoreCase
+                    );
+                }
+            );
         }
 
         var products = await _productService
@@ -459,16 +560,15 @@ public class ReturnService : IReturnService
             )
             .ToListAsync();
 
-        var returnLinesInvalid = returnLines.ExceptBy(
-            products.Select(p => p.Id),
-            rl => rl.ProductId,
-            StringComparer.OrdinalIgnoreCase
+        errorsReturnLine.AddRange(
+            returnLines
+                .ExceptBy(
+                    products.Select(p => p.Id),
+                    rl => rl.ProductId,
+                    StringComparer.OrdinalIgnoreCase
+                )
+                .Select(rl => (rl.Reference, $"Product {rl.ProductId} was not found."))
         );
-
-        foreach (var returnLine in returnLinesInvalid)
-        {
-            errorsReturnLine[returnLine.Reference].Add($"Product {returnLine.ProductId} was not found.");
-        }
 
         var returnLinesProduct = returnLines
             .Join(
@@ -486,22 +586,39 @@ public class ReturnService : IReturnService
 
         if (!returnLinesProduct.Any())
         {
-            return _mapper.Map<ReturnValidated>(returnCandidate);
+            return _mapper.Map<ReturnValidated>(
+                returnCandidate,
+                moo =>
+                {
+                    moo.Items["errorsReturn"] = errorsReturn;
+                    moo.Items["errorsReturnLine"] = errorsReturnLine.ToLookup(
+                        erl => erl.Reference,
+                        erl => erl.Message,
+                        StringComparer.OrdinalIgnoreCase
+                    );
+                }
+            );
         }
 
         foreach (var returnLineProduct in returnLinesProduct)
         {
             if (returnLineProduct.Product.ByOrderOnly)
             {
-                errorsReturnLine[returnLineProduct.Line.Reference].Add(
-                    $"Product {returnLineProduct.Product.Id} was purchased by order and cannot be returned."
+                errorsReturnLine.Add(
+                    (
+                        returnLineProduct.Line.Reference,
+                        $"Product {returnLineProduct.Product.Id} was purchased by order and cannot be returned."
+                    )
                 );
             }
 
             if (returnLineProduct.Line.ProductType == ReturnProductType.UnderWarranty && returnLineProduct.Product.Serviceable)
             {
-                errorsReturnLine[returnLineProduct.Line.Reference].Add(
-                    $"Product {returnLineProduct.Product.Id} must be serviced and cannot be returned under warranty."
+                errorsReturnLine.Add(
+                    (
+                        returnLineProduct.Line.Reference,
+                        $"Product {returnLineProduct.Product.Id} must be serviced and cannot be returned under warranty."
+                    )
                 );
             }
         }
@@ -514,7 +631,18 @@ public class ReturnService : IReturnService
 
         if (!returnLines.Any())
         {
-            return _mapper.Map<ReturnValidated>(returnCandidate);
+            return _mapper.Map<ReturnValidated>(
+                returnCandidate,
+                moo =>
+                {
+                    moo.Items["errorsReturn"] = errorsReturn;
+                    moo.Items["errorsReturnLine"] = errorsReturnLine.ToLookup(
+                        erl => erl.Reference,
+                        erl => erl.Message,
+                        StringComparer.OrdinalIgnoreCase
+                    );
+                }
+            );
         }
 
         var invoiceNumbers = returnLines
@@ -556,15 +684,13 @@ public class ReturnService : IReturnService
                 .Cast<string>()
                 .ToHashSetAsync(StringComparer.OrdinalIgnoreCase);
 
-            var returnLinesFiltered = returnLines.Where(rl =>
-                !string.IsNullOrEmpty(rl.SerialNumber) &&
-                serialNumbersRegistered.Contains(rl.SerialNumber)
-            );
-
-            foreach (var returnLine in returnLinesFiltered)
-            {
-                errorsReturnLine[returnLine.Reference].Add($"Serial number {returnLine.SerialNumber} is already registered for return.");
-            }
+            errorsReturnLine.AddRange(
+                returnLines
+                    .Where(rl =>
+                        !string.IsNullOrEmpty(rl.SerialNumber) &&
+                        serialNumbersRegistered.Contains(rl.SerialNumber)
+                    )
+                    .Select(rl => (rl.Reference, $"Serial number {rl.SerialNumber} is already registered for return.")));
         }
 
         var returnLinesRegistered = await _dbContext
@@ -650,8 +776,11 @@ public class ReturnService : IReturnService
                 returnLineMapped.Line.Returned.Value.Date < returnLineMapped.InvoiceDate.Value.Date
             )
             {
-                errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                    $"Return date ({returnLineMapped.Line.Returned:yyyy-MM-dd}) must either be empty or later than the invoice date ({returnLineMapped.InvoiceDate:yyyy-MM-dd})."
+                errorsReturnLine.Add(
+                    (
+                        returnLineMapped.Line.Reference,
+                        $"Return date ({returnLineMapped.Line.Returned:yyyy-MM-dd}) must either be empty or later than the invoice date ({returnLineMapped.InvoiceDate:yyyy-MM-dd})."
+                    )
                 );
             }
 
@@ -659,20 +788,29 @@ public class ReturnService : IReturnService
             {
                 if (returnLineMapped.QuantityInvoice == 0)
                 {
-                    errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                        $"Invoice {returnLineMapped.Line.InvoiceNumber} product {returnLineMapped.Line.ProductId} is not available for return."
+                    errorsReturnLine.Add(
+                        (
+                            returnLineMapped.Line.Reference,
+                            $"Invoice {returnLineMapped.Line.InvoiceNumber} product {returnLineMapped.Line.ProductId} is not available for return."
+                        )
                     );
                 }
                 else if (returnLineMapped.QuantityInvoice == returnLineMapped.QuantityReturnRegistered)
                 {
-                    errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                        $"All invoice {returnLineMapped.Line.InvoiceNumber} products {returnLineMapped.Line.ProductId} are already registered for return."
+                    errorsReturnLine.Add(
+                        (
+                            returnLineMapped.Line.Reference,
+                            $"All invoice {returnLineMapped.Line.InvoiceNumber} products {returnLineMapped.Line.ProductId} are already registered for return."
+                        )
                     );
                 }
                 else
                 {
-                    errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                        $"Return quantity is greater than available quantity ({returnLineMapped.QuantityInvoice - returnLineMapped.QuantityReturnRegistered})."
+                    errorsReturnLine.Add(
+                        (
+                            returnLineMapped.Line.Reference,
+                            $"Return quantity is greater than available quantity ({returnLineMapped.QuantityInvoice - returnLineMapped.QuantityReturnRegistered})."
+                        )
                     );
                 }
             }
@@ -685,8 +823,11 @@ public class ReturnService : IReturnService
                 )
             )
             {
-                errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                    $"Serial number {returnLineMapped.Line.SerialNumber} for invoice {returnLineMapped.Line.InvoiceNumber} product {returnLineMapped.Line.ProductId} was not found."
+                errorsReturnLine.Add(
+                    (
+                        returnLineMapped.Line.Reference,
+                        $"Serial number {returnLineMapped.Line.SerialNumber} for invoice {returnLineMapped.Line.InvoiceNumber} product {returnLineMapped.Line.ProductId} was not found."
+                    )
                 );
             }
         }
@@ -704,10 +845,19 @@ public class ReturnService : IReturnService
 
         if (!returnLinesMapped.Any())
         {
-            return _mapper.Map<ReturnValidated>(returnCandidate);
+            return _mapper.Map<ReturnValidated>(
+                returnCandidate,
+                moo =>
+                {
+                    moo.Items["errorsReturn"] = errorsReturn;
+                    moo.Items["errorsReturnLine"] = errorsReturnLine.ToLookup(
+                        erl => erl.Reference,
+                        erl => erl.Message,
+                        StringComparer.OrdinalIgnoreCase
+                    );
+                }
+            );
         }
-
-        var country = await _regionService.GetCountry(deliveryPoint!.CountryId);
 
         var countryId = country?.Id;
         var regionIds = country?.Regions.Select(r => r.Id) ?? Enumerable.Empty<int>();
@@ -745,20 +895,29 @@ public class ReturnService : IReturnService
                 : returnAvailabilities[default(int)];
         }
 
-        returnLinesMapped = returnLinesMapped
-            .Where(rlm =>
-                rlm.InvoiceDate.HasValue &&
-                ((rlm.Line.Returned?.Date ?? DateTime.Today) - rlm.InvoiceDate.Value.Date).Days > availability
-            )
-            .ToList();
+        errorsReturnLine.AddRange(
+            returnLinesMapped
+                .Where(rlm =>
+                    rlm.InvoiceDate.HasValue &&
+                    ((rlm.Line.Returned?.Date ?? DateTime.Today) - rlm.InvoiceDate.Value.Date).Days > availability
+                )
+                .Select(rlm => (
+                    rlm.Line.Reference,
+                    $"Invoice {rlm.Line.InvoiceNumber} was created more than {availability} days ago ({((rlm.Line.Returned?.Date ?? DateTime.Today) - rlm.InvoiceDate!.Value.Date).Days}) and is not eligible for return."
+                ))
+        );
 
-        foreach (var returnLineMapped in returnLinesMapped)
-        {
-            errorsReturnLine[returnLineMapped.Line.Reference].Add(
-                $"Invoice {returnLineMapped.Line.InvoiceNumber} was created more than {availability} days ago ({((returnLineMapped.Line.Returned?.Date ?? DateTime.Today) - returnLineMapped.InvoiceDate!.Value.Date).Days}) and is not eligible for return."
-            );
-        }
-
-        return _mapper.Map<ReturnValidated>(returnCandidate);
+        return _mapper.Map<ReturnValidated>(
+            returnCandidate,
+            moo =>
+            {
+                moo.Items["errorsReturn"] = errorsReturn;
+                moo.Items["errorsReturnLine"] = errorsReturnLine.ToLookup(
+                    erl => erl.Reference,
+                    erl => erl.Message,
+                    StringComparer.OrdinalIgnoreCase
+                );
+            }
+        );
     }
 }

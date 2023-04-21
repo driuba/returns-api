@@ -13,8 +13,6 @@ public class ReturnFee : EntityTrackable
 
     public virtual ReturnLine? Line { get; set; }
 
-    public string? ProductId { get; set; }
-
     public virtual Return Return { get; set; } = default!;
 
     public int ReturnId { get; set; }

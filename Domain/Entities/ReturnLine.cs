@@ -40,5 +40,5 @@ public class ReturnLine : EntityTrackable
 
     public string? SerialNumber { get; set; }
 
-    public ReturnLineState State { get; set; }
+    public ReturnState State { get; set; }
 }

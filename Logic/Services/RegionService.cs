@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Returns.Domain.Dto.Countries;
+using Returns.Domain.Dto.Regions;
 using Returns.Domain.Enums;
 using Returns.Domain.Services;
 

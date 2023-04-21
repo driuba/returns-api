@@ -16,12 +16,20 @@ public class CustomerService : ICustomerService
         _sessionService = sessionService;
     }
 
-    public Task<Customer?> GetDeliveryPoint(string deliveryPointId)
+    public async Task<Customer?> GetDeliveryPoint(string deliveryPointId)
     {
-        return _dbContext
-            .Set<Domain.Mock.CompanyCustomer>()
-            .Where(cc => cc.CompanyId == _sessionService.CompanyId)
-            .Select(cc => cc.Customer)
+        if (string.IsNullOrEmpty(deliveryPointId))
+        {
+            return default(Customer?);
+        }
+
+        return await _dbContext
+            .Set<Domain.Mock.Customer>()
+            .Where(c =>
+                string.IsNullOrEmpty(c.ParentId)
+                    ? c.Companies.Any(cc => cc.CompanyId == _sessionService.CompanyId)
+                    : c.Parent!.Companies.Any(cc => cc.CompanyId == _sessionService.CompanyId)
+            )
             .Where(c =>
                 string.IsNullOrEmpty(_sessionService.CustomerId) ||
                 c.Id == _sessionService.CustomerId ||

@@ -1,4 +1,4 @@
-namespace Returns.Domain.Dto.Countries;
+namespace Returns.Domain.Dto.Regions;
 
 public class Country
 {

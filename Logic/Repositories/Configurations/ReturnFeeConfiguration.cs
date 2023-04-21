@@ -26,11 +26,6 @@ public class ReturnFeeConfiguration : EntityTrackableConfiguration<ReturnFee>
             .IsRequired();
 
         builder
-            .Property(rf => rf.ProductId)
-            .IsRequired(false)
-            .HasMaxLength(20);
-
-        builder
             .Property(rf => rf.ReturnId)
             .IsRequired();
 

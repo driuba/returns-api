@@ -35,7 +35,11 @@ public class ReturnAvailabilityConfiguration : EntityTypeConfiguration<ReturnAva
             .IsRequired(false);
 
         builder
-            .HasIndex(ra => new { ra.CompanyId, CountryId = ra.RegionId })
+            .HasIndex(ra => new
+            {
+                ra.CompanyId,
+                ra.RegionId
+            })
             .IsUnique()
             .HasFilter(null);
 

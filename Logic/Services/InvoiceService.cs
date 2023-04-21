@@ -16,8 +16,13 @@ public class InvoiceService : IInvoiceService
         _sessionService = sessionService;
     }
 
-    public async Task<IEnumerable<InvoiceLine>> FilterLines(IEnumerable<string> invoiceNumbers, IEnumerable<string> productIds)
+    public async Task<IEnumerable<InvoiceLine>> FilterLines(string customerId, IEnumerable<string> invoiceNumbers, IEnumerable<string> productIds)
     {
+        if (string.IsNullOrEmpty(customerId))
+        {
+            return Enumerable.Empty<InvoiceLine>();
+        }
+
         invoiceNumbers = invoiceNumbers.ToList();
         productIds = productIds.ToList();
 
@@ -28,7 +33,8 @@ public class InvoiceService : IInvoiceService
 
         var query = _dbContext
             .Set<Domain.Mock.InvoiceLine>()
-            .Where(il => il.Invoice.CompanyId == _sessionService.CompanyId);
+            .Where(il => il.Invoice.CompanyId == _sessionService.CompanyId)
+            .Where(il => il.Invoice.CustomerId == customerId);
 
         if (invoiceNumbers.Any())
         {

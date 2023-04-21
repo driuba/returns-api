@@ -105,6 +105,7 @@ public static class ServiceCollectionExtensions
         serviceCollection.AddScoped<IProductService, ProductService>();
         serviceCollection.AddScoped<IRegionService, RegionService>();
         serviceCollection.AddScoped<IReturnService, ReturnService>();
+        serviceCollection.AddScoped<IReturnFeeService, ReturnFeeService>();
         serviceCollection.AddScoped<IStorageService, StorageService>();
     }
 

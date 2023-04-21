@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Returns.Logic.Repositories;
 
@@ -10,9 +11,11 @@ using Returns.Logic.Repositories;
 namespace Returns.Logic.Migrations
 {
     [DbContext(typeof(ReturnDbContext))]
-    partial class ReturnDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230419122200_Remove_ReturnLineDevice_Snapshot")]
+    partial class Remove_ReturnLineDevice_Snapshot
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.5");
@@ -227,6 +230,11 @@ namespace Returns.Logic.Migrations
 
                     b.Property<DateTime?>("Modified")
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("ProductId")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<int>("ReturnId")
                         .HasColumnType("INTEGER");
