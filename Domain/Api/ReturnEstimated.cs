@@ -2,9 +2,9 @@ namespace Returns.Domain.Api;
 
 public class ReturnEstimated
 {
-    public IEnumerable<ReturnFeeEstimated> Fees { get; set; } = Enumerable.Empty<ReturnFeeEstimated>();
+    public IEnumerable<ReturnFeeEstimated> Fees { get; init; } = Enumerable.Empty<ReturnFeeEstimated>();
 
-    public IEnumerable<ReturnLineEstimated> Lines { get; set; } = Enumerable.Empty<ReturnLineEstimated>();
+    public IEnumerable<ReturnLineEstimated> Lines { get; init; } = Enumerable.Empty<ReturnLineEstimated>();
 
-    public IEnumerable<string> Messages { get; set; } = Enumerable.Empty<string>();
+    public IEnumerable<string> Messages { get; init; } = Enumerable.Empty<string>();
 }

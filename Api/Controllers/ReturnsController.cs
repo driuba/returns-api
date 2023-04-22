@@ -26,7 +26,7 @@ public class ReturnsController : ControllerBase
     [HttpDelete("returns({id:int})")]
     public async Task<IActionResult> Delete(string companyId, int id)
     {
-        var response = await _returnService.Delete(id);
+        var response = await _returnService.DeleteAsync(id);
 
         if (response.Success)
         {
@@ -41,7 +41,7 @@ public class ReturnsController : ControllerBase
     [HttpPost("returns/estimate")]
     public async Task<IActionResult> Estimate(string companyId, ReturnRequest returnCandidate)
     {
-        var response = await _returnService.Estimate(
+        var response = await _returnService.EstimateAsync(
             _mapper.Map<Domain.Dto.Return>(returnCandidate)
         );
 
@@ -103,7 +103,7 @@ public class ReturnsController : ControllerBase
 
         _mapper.Map(returnCandidate, entity);
 
-        var response = await _returnService.Update(entity);
+        var response = await _returnService.UpdateAsync(entity);
 
         if (response.Success)
         {
@@ -120,7 +120,7 @@ public class ReturnsController : ControllerBase
     [HttpPost("returns")]
     public async Task<IActionResult> Post(string companyId, ReturnRequest returnCandidate)
     {
-        var response = await _returnService.Create(
+        var response = await _returnService.CreateAsync(
             _mapper.Map<Domain.Dto.Return>(returnCandidate)
         );
 

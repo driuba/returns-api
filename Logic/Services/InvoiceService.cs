@@ -16,7 +16,7 @@ public class InvoiceService : IInvoiceService
         _sessionService = sessionService;
     }
 
-    public async Task<IEnumerable<InvoiceLine>> FilterLines(string customerId, IEnumerable<string> invoiceNumbers, IEnumerable<string> productIds)
+    public async Task<IEnumerable<InvoiceLine>> FilterLinesAsync(string customerId, IEnumerable<string> invoiceNumbers, IEnumerable<string> productIds)
     {
         if (string.IsNullOrEmpty(customerId))
         {

@@ -11,33 +11,33 @@ public sealed class ReturnLine : TrackableBase
         ProductId = productId;
     }
 
-    [ReadOnly(true)] public ICollection<ReturnLineAttachment> Attachments { get; set; } = default!;
+    [ReadOnly(true)] public IEnumerable<ReturnLineAttachment> Attachments { get; init; } = default!;
 
-    [ReadOnly(true)] public ICollection<ReturnFee> Fees { get; set; } = default!;
+    [ReadOnly(true)] public IEnumerable<ReturnFee> Fees { get; init; } = default!;
 
-    [ReadOnly(true)] public int Id { get; set; }
+    [ReadOnly(true)] public int Id { get; init; }
 
-    public string InvoiceNumberPurchase { get; set; }
+    public string InvoiceNumberPurchase { get; init; }
 
-    public string? InvoiceNumberReturn { get; set; }
+    public string? InvoiceNumberReturn { get; init; }
 
-    public string? NoteReturn { get; set; }
+    public string? NoteReturn { get; init; }
 
-    public string? NoteResponse { get; set; }
+    public string? NoteResponse { get; init; }
 
-    public decimal PriceUnit { get; set; }
+    public decimal PriceUnit { get; init; }
 
-    public string ProductId { get; set; }
+    public string ProductId { get; init; }
 
-    public ReturnProductType ProductType { get; set; }
+    public ReturnProductType ProductType { get; init; }
 
-    public int Quantity { get; set; }
+    public int Quantity { get; init; }
 
-    [ReadOnly(true)] public Return Return { get; set; } = default!;
+    [ReadOnly(true)] public Return Return { get; init; } = default!;
 
-    public int ReturnId { get; set; }
+    public int ReturnId { get; init; }
 
-    [ReadOnly(true)] public string? SerialNumber { get; set; }
+    [ReadOnly(true)] public string? SerialNumber { get; init; }
 
-    [ReadOnly(true)] public ReturnState State { get; set; }
+    [ReadOnly(true)] public ReturnState State { get; init; }
 }

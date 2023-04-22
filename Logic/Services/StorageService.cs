@@ -18,7 +18,7 @@ public class StorageService : IStorageService
         _options = options.Value;
     }
 
-    public async Task<ValueResponse<Guid>> Create(Stream stream)
+    public async Task<ValueResponse<Guid?>> CreateAsync(Stream stream)
     {
         try
         {
@@ -28,7 +28,7 @@ public class StorageService : IStorageService
 
             await stream.CopyToAsync(file);
 
-            return new ValueResponse<Guid>
+            return new ValueResponse<Guid?>
             {
                 Success = true,
                 Value = id
@@ -38,7 +38,7 @@ public class StorageService : IStorageService
         {
             _logger.LogError(e, "Failed to save the file.");
 
-            return new ValueResponse<Guid>
+            return new ValueResponse<Guid?>
             {
                 Message = "Failed to save the file."
             };

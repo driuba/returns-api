@@ -16,21 +16,21 @@ public sealed class Return : TrackableBase
         Number = number;
     }
 
-    [ReadOnly(true)] public string CustomerId { get; set; }
+    [ReadOnly(true)] public string CustomerId { get; init; }
 
-    [ReadOnly(true)] public string DeliveryPointId { get; set; }
+    [ReadOnly(true)] public string DeliveryPointId { get; init; }
 
-    [ReadOnly(true)] public ICollection<ReturnFee> Fees { get; set; } = default!;
+    [ReadOnly(true)] public IEnumerable<ReturnFee> Fees { get; init; } = default!;
 
-    [ReadOnly(true)] public int Id { get; set; }
+    [ReadOnly(true)] public int Id { get; init; }
 
-    public int LabelCount { get; set; }
+    public int LabelCount { get; init; }
 
-    public ICollection<ReturnLine> Lines { get; set; } = default!;
+    public IEnumerable<ReturnLine> Lines { get; init; } = default!;
 
-    [ReadOnly(true)] public string Number { get; set; }
+    [ReadOnly(true)] public string Number { get; init; }
 
-    [ReadOnly(true)] public string? RmaNumber { get; set; }
+    [ReadOnly(true)] public string? RmaNumber { get; init; }
 
-    [ReadOnly(true)] public ReturnState State { get; set; }
+    [ReadOnly(true)] public ReturnState State { get; init; }
 }

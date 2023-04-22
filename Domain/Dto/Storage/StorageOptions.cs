@@ -14,6 +14,4 @@ public class StorageOptions
         get => _path;
         init => _path = Environment.ExpandEnvironmentVariables(value);
     }
-
-    [Required] public string Url { get; init; } = default!;
 }

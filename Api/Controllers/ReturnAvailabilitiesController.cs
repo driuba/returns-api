@@ -18,7 +18,7 @@ public class ReturnAvailabilitiesController : ControllerBase
         _mapper = mapper;
     }
 
-    [HttpGet("returns/availabilities")]
+    [HttpGet("returnAvailabilities")]
     public async Task<IActionResult> Get(string companyId, ODataQueryOptions<ReturnAvailability> options)
     {
         return Ok(

@@ -15,11 +15,7 @@ public class ReturnLineAttachmentConfiguration : EntityTrackableConfiguration<Re
     {
         builder.ToTable("ReturnLineAttachments");
 
-        builder.HasKey(rla => rla.Id);
-
-        builder
-            .Property(rla => rla.Id)
-            .IsRequired();
+        builder.HasKey(rla => rla.StorageId);
 
         builder
             .Property(rla => rla.Name)
@@ -32,7 +28,8 @@ public class ReturnLineAttachmentConfiguration : EntityTrackableConfiguration<Re
 
         builder
             .Property(rla => rla.StorageId)
-            .IsRequired();
+            .IsRequired()
+            .ValueGeneratedNever();
 
         builder
             .HasOne(rla => rla.Line)

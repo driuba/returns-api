@@ -4,5 +4,5 @@ namespace Returns.Domain.Services;
 
 public interface IInvoiceService
 {
-    Task<IEnumerable<InvoiceLine>> FilterLines(string customerId, IEnumerable<string> invoiceNumbers, IEnumerable<string> productIds);
+    Task<IEnumerable<InvoiceLine>> FilterLinesAsync(string customerId, IEnumerable<string> invoiceNumbers, IEnumerable<string> productIds);
 }

@@ -30,7 +30,7 @@ public class FeeConfigurationsController : ControllerBase
     [HttpDelete("feeConfigurations({id:int})")]
     public async Task<IActionResult> Delete(string companyId, int id)
     {
-        var response = await _feeConfigurationService.Delete(id);
+        var response = await _feeConfigurationService.DeleteAsync(id);
 
         if (response.Success)
         {
@@ -86,7 +86,7 @@ public class FeeConfigurationsController : ControllerBase
 
         _mapper.Map(feeConfigurationCandidate, entity);
 
-        var response = await _feeConfigurationService.Update(entity);
+        var response = await _feeConfigurationService.UpdateAsync(entity);
 
         if (response.Success)
         {
@@ -103,7 +103,7 @@ public class FeeConfigurationsController : ControllerBase
     [HttpPost("feeConfigurations")]
     public async Task<IActionResult> Post(string companyId, FeeConfiguration feeConfigurationCandidate)
     {
-        var response = await _feeConfigurationService.Create(
+        var response = await _feeConfigurationService.CreateAsync(
             _mapper.Map<Domain.Entities.FeeConfiguration>(feeConfigurationCandidate)
         );
 

@@ -4,7 +4,7 @@ namespace Returns.Domain.Services;
 
 public interface IStorageService
 {
-    Task<ValueResponse<Guid>> Create(Stream stream);
+    Task<ValueResponse<Guid?>> CreateAsync(Stream stream);
 
     Response Delete(params Guid[] ids);
 

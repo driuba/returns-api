@@ -11,17 +11,17 @@ public sealed class FeeConfigurationGroup
         Name = name;
     }
 
-    [ReadOnly(true)] public ICollection<FeeConfiguration> Configurations { get; set; } = default!;
+    [ReadOnly(true)] public IEnumerable<FeeConfiguration> Configurations { get; init; } = default!;
 
-    [ReadOnly(true)] public int? DelayDays { get; set; }
+    [ReadOnly(true)] public int? DelayDays { get; init; }
 
-    [ReadOnly(true)] public string Description { get; set; }
+    [ReadOnly(true)] public string Description { get; init; }
 
-    [ReadOnly(true)] public int Id { get; set; }
+    [ReadOnly(true)] public int Id { get; init; }
 
-    [ReadOnly(true)] public string Name { get; set; }
+    [ReadOnly(true)] public string Name { get; init; }
 
-    [ReadOnly(true)] public int Order { get; set; }
+    [ReadOnly(true)] public int Order { get; init; }
 
-    [ReadOnly(true)] public FeeConfigurationGroupType Type { get; set; }
+    [ReadOnly(true)] public FeeConfigurationGroupType Type { get; init; }
 }

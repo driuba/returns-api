@@ -16,7 +16,7 @@ public class CustomerService : ICustomerService
         _sessionService = sessionService;
     }
 
-    public async Task<Customer?> GetDeliveryPoint(string deliveryPointId)
+    public async Task<Customer?> GetDeliveryPointAsync(string deliveryPointId)
     {
         if (string.IsNullOrEmpty(deliveryPointId))
         {

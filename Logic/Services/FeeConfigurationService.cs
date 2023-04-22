@@ -21,7 +21,7 @@ public class FeeConfigurationService : IFeeConfigurationService
         _regionService = regionService;
     }
 
-    public async Task<ValueResponse<FeeConfiguration>> Create(FeeConfiguration feeConfigurationCandidate)
+    public async Task<ValueResponse<FeeConfiguration>> CreateAsync(FeeConfiguration feeConfigurationCandidate)
     {
         if (string.IsNullOrEmpty(feeConfigurationCandidate.CustomerId) && !feeConfigurationCandidate.RegionId.HasValue)
         {
@@ -65,7 +65,7 @@ public class FeeConfigurationService : IFeeConfigurationService
 
         if (feeConfigurationCandidate.RegionId.HasValue)
         {
-            var region = await _regionService.GetRegion(feeConfigurationCandidate.RegionId.Value);
+            var region = await _regionService.GetRegionAsync(feeConfigurationCandidate.RegionId.Value);
 
             if (region is null)
             {
@@ -78,7 +78,7 @@ public class FeeConfigurationService : IFeeConfigurationService
 
         if (!string.IsNullOrEmpty(feeConfigurationCandidate.CustomerId))
         {
-            var deliveryPoint = await _customerService.GetDeliveryPoint(feeConfigurationCandidate.CustomerId);
+            var deliveryPoint = await _customerService.GetDeliveryPointAsync(feeConfigurationCandidate.CustomerId);
 
             if (deliveryPoint is null)
             {
@@ -141,11 +141,12 @@ public class FeeConfigurationService : IFeeConfigurationService
         };
     }
 
-    public async Task<ValueResponse<FeeConfiguration>> Delete(int id)
+    public async Task<ValueResponse<FeeConfiguration>> DeleteAsync(int id)
     {
         var feeConfiguration = await _dbContext
             .Set<FeeConfiguration>()
             .AsTracking()
+            .Include(fc => fc.Fees.Take(1))
             .SingleOrDefaultAsync(fc => fc.Id == id);
 
         if (feeConfiguration is null)
@@ -172,7 +173,16 @@ public class FeeConfigurationService : IFeeConfigurationService
             };
         }
 
-        feeConfiguration.Deleted = true;
+        if (feeConfiguration.Fees.Any())
+        {
+            _dbContext
+                .Set<FeeConfiguration>()
+                .Remove(feeConfiguration);
+        }
+        else
+        {
+            feeConfiguration.Deleted = true;
+        }
 
         await _dbContext.SaveChangesAsync();
 
@@ -224,7 +234,7 @@ public class FeeConfigurationService : IFeeConfigurationService
         );
     }
 
-    public async Task<ValueResponse<FeeConfiguration>> Update(FeeConfiguration feeConfigurationCandidate)
+    public async Task<ValueResponse<FeeConfiguration>> UpdateAsync(FeeConfiguration feeConfigurationCandidate)
     {
         if (feeConfigurationCandidate.Value < 0)
         {

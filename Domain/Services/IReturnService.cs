@@ -7,15 +7,17 @@ namespace Returns.Domain.Services;
 
 public interface IReturnService
 {
-    Task<ValueResponse<Entities.Return>> Create(Return returnCandidate);
+    Task<ValueResponse<Entities.Return>> CreateAsync(Return returnCandidate);
 
-    Task<ValueResponse<Entities.Return>> Delete(int id);
+    Task<ValueResponse<Entities.Return>> DeleteAsync(int id);
 
-    Task<ValueResponse<ReturnEstimated>> Estimate(Return returnCandidate);
+    Task<ValueResponse<ReturnEstimated>> EstimateAsync(Return returnCandidate);
 
-    Task<ValueResponse<Entities.Return>> Update(Entities.Return returnCandidate);
+    Task<ValueResponse<Domain.Entities.Return>> MergeAsync(ReturnEstimated returnCandidate);
 
-    Task<ReturnValidated> Validate(
+    Task<ValueResponse<Entities.Return>> UpdateAsync(Entities.Return returnCandidate);
+
+    Task<ReturnValidated> ValidateAsync(
         Return returnCandidate,
         Country? country,
         Customer deliveryPoint,

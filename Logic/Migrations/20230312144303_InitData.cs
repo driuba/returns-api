@@ -11,21 +11,21 @@ namespace Returns.Logic.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(EmbeddedResourceReader.Read("InitData.CreateImportTables.sql").Result);
-            migrationBuilder.Sql(EmbeddedResourceReader.Read("InitData.InsertIntoImportTables.sql").Result);
+            migrationBuilder.Sql(EmbeddedResourceReader.ReadAsync("InitData.CreateImportTables.sql").Result);
+            migrationBuilder.Sql(EmbeddedResourceReader.ReadAsync("InitData.InsertIntoImportTables.sql").Result);
 
-            migrationBuilder.Sql(EmbeddedResourceReader.Read("InitData.InsertIntoReturnAvailabilities.sql").Result);
+            migrationBuilder.Sql(EmbeddedResourceReader.ReadAsync("InitData.InsertIntoReturnAvailabilities.sql").Result);
 
-            migrationBuilder.Sql(EmbeddedResourceReader.Read("InitData.InsertIntoFeeConfigurationGroups.sql").Result);
-            migrationBuilder.Sql(EmbeddedResourceReader.Read("InitData.InsertIntoFeeConfigurations.sql").Result);
+            migrationBuilder.Sql(EmbeddedResourceReader.ReadAsync("InitData.InsertIntoFeeConfigurationGroups.sql").Result);
+            migrationBuilder.Sql(EmbeddedResourceReader.ReadAsync("InitData.InsertIntoFeeConfigurations.sql").Result);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(EmbeddedResourceReader.Read("InitData.DeleteFeeConfigurationGroups.sql").Result);
+            migrationBuilder.Sql(EmbeddedResourceReader.ReadAsync("InitData.DeleteFeeConfigurationGroups.sql").Result);
 
-            migrationBuilder.Sql(EmbeddedResourceReader.Read("InitData.DeleteReturnAvailabilities.sql").Result);
+            migrationBuilder.Sql(EmbeddedResourceReader.ReadAsync("InitData.DeleteReturnAvailabilities.sql").Result);
         }
     }
 }

@@ -7,7 +7,7 @@ public class ReturnLineValidated
         Reference = reference;
     }
 
-    public IEnumerable<string> Messages { get; set; } = Enumerable.Empty<string>();
+    public IEnumerable<string> Messages { get; init; } = Enumerable.Empty<string>();
 
-    public string Reference { get; set; }
+    public string Reference { get; init; }
 }

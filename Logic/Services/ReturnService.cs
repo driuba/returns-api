@@ -55,9 +55,9 @@ public class ReturnService : IReturnService
         _storageService = storageService;
     }
 
-    public async Task<ValueResponse<Domain.Entities.Return>> Create(Return returnCandidate)
+    public async Task<ValueResponse<Domain.Entities.Return>> CreateAsync(Return returnCandidate)
     {
-        var deliveryPoint = await _customerService.GetDeliveryPoint(returnCandidate.DeliveryPointId);
+        var deliveryPoint = await _customerService.GetDeliveryPointAsync(returnCandidate.DeliveryPointId);
 
         if (deliveryPoint is null)
         {
@@ -67,10 +67,10 @@ public class ReturnService : IReturnService
             };
         }
 
-        var country = await _regionService.GetCountry(deliveryPoint.CountryId);
+        var country = await _regionService.GetCountryAsync(deliveryPoint.CountryId);
 
         var invoiceLines = await _invoiceService
-            .FilterLines(
+            .FilterLinesAsync(
                 returnCandidate.CustomerId,
                 returnCandidate.Lines
                     .Select(l => l.InvoiceNumber)
@@ -81,7 +81,7 @@ public class ReturnService : IReturnService
             )
             .ToListAsync();
 
-        var returnValidated = await Validate(
+        var returnValidated = await ValidateAsync(
             returnCandidate,
             country,
             deliveryPoint,
@@ -100,7 +100,7 @@ public class ReturnService : IReturnService
             };
         }
 
-        var returnEstimated = await _returnFeeService.Resolve(
+        var returnEstimated = await _returnFeeService.ResolveAsync(
             returnValidated,
             country,
             invoiceLines
@@ -147,7 +147,7 @@ public class ReturnService : IReturnService
         };
     }
 
-    public async Task<ValueResponse<Domain.Entities.Return>> Delete(int id)
+    public async Task<ValueResponse<Domain.Entities.Return>> DeleteAsync(int id)
     {
         var returnExisting = await _dbContext
             .Set<Domain.Entities.Return>()
@@ -205,9 +205,9 @@ public class ReturnService : IReturnService
         };
     }
 
-    public async Task<ValueResponse<ReturnEstimated>> Estimate(Return returnCandidate)
+    public async Task<ValueResponse<ReturnEstimated>> EstimateAsync(Return returnCandidate)
     {
-        var deliveryPoint = await _customerService.GetDeliveryPoint(returnCandidate.DeliveryPointId);
+        var deliveryPoint = await _customerService.GetDeliveryPointAsync(returnCandidate.DeliveryPointId);
 
         if (deliveryPoint is null)
         {
@@ -217,10 +217,10 @@ public class ReturnService : IReturnService
             };
         }
 
-        var country = await _regionService.GetCountry(deliveryPoint.CountryId);
+        var country = await _regionService.GetCountryAsync(deliveryPoint.CountryId);
 
         var invoiceLines = await _invoiceService
-            .FilterLines(
+            .FilterLinesAsync(
                 returnCandidate.CustomerId,
                 returnCandidate.Lines
                     .Select(l => l.InvoiceNumber)
@@ -231,7 +231,7 @@ public class ReturnService : IReturnService
             )
             .ToListAsync();
 
-        var returnValidated = await Validate(
+        var returnValidated = await ValidateAsync(
             returnCandidate,
             country,
             deliveryPoint,
@@ -239,7 +239,7 @@ public class ReturnService : IReturnService
             validateAttachments: false
         );
 
-        var returnEstimated = await _returnFeeService.Resolve(returnValidated, country, invoiceLines);
+        var returnEstimated = await _returnFeeService.ResolveAsync(returnValidated, country, invoiceLines);
 
         return new ValueResponse<ReturnEstimated>
         {
@@ -248,7 +248,12 @@ public class ReturnService : IReturnService
         };
     }
 
-    public async Task<ValueResponse<Domain.Entities.Return>> Update(Domain.Entities.Return returnCandidate)
+    public Task<ValueResponse<Domain.Entities.Return>> MergeAsync(ReturnEstimated returnCandidate)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<ValueResponse<Domain.Entities.Return>> UpdateAsync(Domain.Entities.Return returnCandidate)
     {
         if (returnCandidate.LabelCount < 0)
         {
@@ -290,7 +295,7 @@ public class ReturnService : IReturnService
         };
     }
 
-    public async Task<ReturnValidated> Validate(
+    public async Task<ReturnValidated> ValidateAsync(
         Return returnCandidate,
         Country? country,
         Customer deliveryPoint,
@@ -649,7 +654,7 @@ public class ReturnService : IReturnService
         }
 
         var products = await _productService
-            .Filter(
+            .FilterAsync(
                 returnLines
                     .Select(rl => rl.ProductId)
                     .Distinct(StringComparer.OrdinalIgnoreCase)

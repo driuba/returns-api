@@ -10,8 +10,6 @@ public class ReturnLineAttachment : EntityTrackable
         Name = name;
     }
 
-    public int Id { get; set; }
-
     public virtual ReturnLine Line { get; set; } = default!;
 
     public string Name { get; set; }

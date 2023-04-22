@@ -2,9 +2,9 @@ namespace Returns.Domain.Api;
 
 public class ReturnFeeEstimated
 {
-    public int? DelayDays { get; set; }
+    public int? DelayDays { get; init; }
 
-    public int FeeConfigurationGroupId { get; set; }
+    public int FeeConfigurationGroupId { get; init; }
 
-    public decimal Value { get; set; }
+    public decimal Value { get; init; }
 }

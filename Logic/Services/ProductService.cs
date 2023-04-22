@@ -14,7 +14,7 @@ public class ProductService : IProductService
         _dbContext = dbContext;
     }
 
-    public async Task<IEnumerable<Product>> Filter(IEnumerable<string> ids)
+    public async Task<IEnumerable<Product>> FilterAsync(IEnumerable<string> ids)
     {
         ids = ids.ToList();
 

@@ -4,19 +4,16 @@ namespace Returns.Domain.Api;
 
 public sealed class ReturnLineAttachment : TrackableBase
 {
-    public ReturnLineAttachment(string name, string url)
+    public ReturnLineAttachment(string name)
     {
         Name = name;
-        Url = url;
     }
 
-    [ReadOnly(true)] public int Id { get; set; }
+    [ReadOnly(true)] public ReturnLine Line { get; init; } = default!;
 
-    [ReadOnly(true)] public ReturnLine Line { get; set; } = default!;
+    [ReadOnly(true)] public string Name { get; init; }
 
-    [ReadOnly(true)] public string Name { get; set; }
+    [ReadOnly(true)] public int ReturnLineId { get; init; }
 
-    [ReadOnly(true)] public int ReturnLineId { get; set; }
-
-    [ReadOnly(true)] public string Url { get; set; }
+    [ReadOnly(true)] public Guid StorageId { get; init; }
 }

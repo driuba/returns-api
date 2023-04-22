@@ -4,5 +4,5 @@ namespace Returns.Domain.Services;
 
 public interface IProductService
 {
-    Task<IEnumerable<Product>> Filter(IEnumerable<string> ids);
+    Task<IEnumerable<Product>> FilterAsync(IEnumerable<string> ids);
 }

@@ -10,13 +10,13 @@ public class ReturnRequest
         DeliveryPointId = deliveryPointId;
     }
 
-    [UsedImplicitly] public string CustomerId { get; set; }
+    [UsedImplicitly] public string CustomerId { get; init; }
 
-    [UsedImplicitly] public string DeliveryPointId { get; set; }
+    [UsedImplicitly] public string DeliveryPointId { get; init; }
 
-    [UsedImplicitly] public int LabelCount { get; set; }
+    [UsedImplicitly] public int LabelCount { get; init; }
 
-    [UsedImplicitly] public IEnumerable<ReturnLineRequest> Lines { get; set; } = Enumerable.Empty<ReturnLineRequest>();
+    [UsedImplicitly] public IEnumerable<ReturnLineRequest> Lines { get; init; } = Enumerable.Empty<ReturnLineRequest>();
 
-    [UsedImplicitly] public string? RmaNumber { get; set; }
+    [UsedImplicitly] public string? RmaNumber { get; init; }
 }

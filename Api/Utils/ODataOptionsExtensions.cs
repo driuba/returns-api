@@ -23,6 +23,10 @@ internal static class ODataOptionsExtensions
         builder.EntitySet<Domain.Api.ReturnLine>("returnLines");
         builder.EntitySet<Domain.Api.ReturnLineAttachment>("returnLineAttachments");
 
+        builder
+            .EntityType<Domain.Api.ReturnLineAttachment>()
+            .HasKey(rla => rla.StorageId);
+
         return builder.GetEdmModel();
     }
 }

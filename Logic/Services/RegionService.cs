@@ -14,7 +14,7 @@ public class RegionService : IRegionService
         _dbContext = dbContext;
     }
 
-    public Task<Country?> GetCountry(int id)
+    public Task<Country?> GetCountryAsync(int id)
     {
         return _dbContext
             .Set<Domain.Mock.Region>()
@@ -31,7 +31,7 @@ public class RegionService : IRegionService
             .SingleOrDefaultAsync();
     }
 
-    public Task<Region?> GetRegion(int id)
+    public Task<Region?> GetRegionAsync(int id)
     {
         return _dbContext
             .Set<Domain.Mock.Region>()

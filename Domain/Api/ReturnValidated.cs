@@ -2,7 +2,7 @@ namespace Returns.Domain.Api;
 
 public class ReturnValidated
 {
-    public IEnumerable<ReturnLineValidated> Lines { get; set; } = Enumerable.Empty<ReturnLineValidated>();
+    public IEnumerable<ReturnLineValidated> Lines { get; init; } = Enumerable.Empty<ReturnLineValidated>();
 
-    public IEnumerable<string> Messages { get; set; } = Enumerable.Empty<string>();
+    public IEnumerable<string> Messages { get; init; } = Enumerable.Empty<string>();
 }

@@ -5,11 +5,11 @@ namespace Returns.Domain.Services;
 
 public interface IFeeConfigurationService
 {
-    Task<ValueResponse<FeeConfiguration>> Create(FeeConfiguration feeConfigurationCandidate);
+    Task<ValueResponse<FeeConfiguration>> CreateAsync(FeeConfiguration feeConfigurationCandidate);
 
-    Task<ValueResponse<FeeConfiguration>> Delete(int id);
+    Task<ValueResponse<FeeConfiguration>> DeleteAsync(int id);
 
     FeeConfiguration? Resolve(IEnumerable<FeeConfiguration> configurations, string? customerId, int? countryId, IEnumerable<int> regionIds);
 
-    Task<ValueResponse<FeeConfiguration>> Update(FeeConfiguration feeConfigurationCandidate);
+    Task<ValueResponse<FeeConfiguration>> UpdateAsync(FeeConfiguration feeConfigurationCandidate);
 }

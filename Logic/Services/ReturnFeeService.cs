@@ -173,7 +173,7 @@ public class ReturnFeeService : IReturnFeeService
         );
     }
 
-    public async Task<ReturnEstimated> Resolve(ReturnValidated returnValidated, Country? country, IEnumerable<InvoiceLine> invoiceLines)
+    public async Task<ReturnEstimated> ResolveAsync(ReturnValidated returnValidated, Country? country, IEnumerable<InvoiceLine> invoiceLines)
     {
         var feesReturn = new List<ReturnFeeEstimated>();
         var feesReturnLine = new List<(string Reference, ReturnFeeEstimated Fee)>();

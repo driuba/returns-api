@@ -4,7 +4,7 @@ namespace Returns.Domain.Services;
 
 public interface IRegionService
 {
-    Task<Country?> GetCountry(int id);
+    Task<Country?> GetCountryAsync(int id);
 
-    Task<Region?> GetRegion(int id);
+    Task<Region?> GetRegionAsync(int id);
 }

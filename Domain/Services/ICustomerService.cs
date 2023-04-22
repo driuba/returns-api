@@ -4,5 +4,5 @@ namespace Returns.Domain.Services;
 
 public interface ICustomerService
 {
-    Task<Customer?> GetDeliveryPoint(string deliveryPointId);
+    Task<Customer?> GetDeliveryPointAsync(string deliveryPointId);
 }

@@ -4,9 +4,9 @@ namespace Returns.Domain.Api;
 
 public sealed class ReturnAvailability
 {
-    [ReadOnly(true)] public string? CountryId { get; set; }
+    [ReadOnly(true)] public int? CountryId { get; init; }
 
-    [ReadOnly(true)] public int Days { get; set; }
+    [ReadOnly(true)] public int Days { get; init; }
 
-    [ReadOnly(true)] public int Id { get; set; }
+    [ReadOnly(true)] public int Id { get; init; }
 }
