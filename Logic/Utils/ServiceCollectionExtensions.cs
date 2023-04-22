@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Returns.Domain.Dto.Storage;
 using Returns.Domain.Services;
 using Returns.Logic.Mappings;
 using Returns.Logic.Mock.Repositories;
@@ -46,6 +47,11 @@ public static class ServiceCollectionExtensions
         });
 
         serviceCollection.AddSingleton(BuildJsonSerializerOptions);
+
+        serviceCollection
+            .AddOptions<StorageOptions>()
+            .BindConfiguration(nameof(StorageOptions))
+            .ValidateDataAnnotations();
 
         serviceCollection.AddDbContext<MockDbContext>(b =>
         {

@@ -180,7 +180,7 @@ public class ReturnService : IReturnService
 
         if (storageIds.Any())
         {
-            var response = await _storageService.Delete(storageIds);
+            var response = _storageService.Delete(storageIds);
 
             if (!response.Success)
             {

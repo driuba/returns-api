@@ -4,7 +4,11 @@ namespace Returns.Domain.Services;
 
 public interface IStorageService
 {
-    Task<Response> Delete(params Guid[] ids);
+    Task<ValueResponse<Guid>> Create(Stream stream);
 
-    Task<Response> Delete(IEnumerable<Guid> ids);
+    Response Delete(params Guid[] ids);
+
+    Response Delete(IEnumerable<Guid> ids);
+
+    ValueResponse<Stream> Get(Guid id);
 }
