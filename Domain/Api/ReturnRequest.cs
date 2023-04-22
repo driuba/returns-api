@@ -17,6 +17,4 @@ public class ReturnRequest
     [UsedImplicitly] public int LabelCount { get; init; }
 
     [UsedImplicitly] public IEnumerable<ReturnLineRequest> Lines { get; init; } = Enumerable.Empty<ReturnLineRequest>();
-
-    [UsedImplicitly] public string? RmaNumber { get; init; }
 }

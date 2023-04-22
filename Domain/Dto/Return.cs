@@ -17,6 +17,4 @@ public class Return
     public int LabelCount { get; set; }
 
     public IEnumerable<ReturnLine> Lines { get; set; } = Enumerable.Empty<ReturnLine>();
-
-    public string? RmaNumber { get; set; }
 }

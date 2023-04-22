@@ -30,7 +30,5 @@ public sealed class Return : TrackableBase
 
     [ReadOnly(true)] public string Number { get; init; }
 
-    [ReadOnly(true)] public string? RmaNumber { get; init; }
-
     [ReadOnly(true)] public ReturnState State { get; init; }
 }

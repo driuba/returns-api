@@ -19,6 +19,4 @@ public class ReturnEstimated
     public IEnumerable<ReturnLineEstimated> Lines { get; set; } = Enumerable.Empty<ReturnLineEstimated>();
 
     public IEnumerable<string> Messages { get; set; } = Enumerable.Empty<string>();
-
-    public string? RmaNumber { get; set; }
 }

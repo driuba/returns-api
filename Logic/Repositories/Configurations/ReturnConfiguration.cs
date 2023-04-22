@@ -46,11 +46,6 @@ public class ReturnConfiguration : EntityTrackableConfiguration<Return>
             .HasMaxLength(20);
 
         builder
-            .Property(r => r.RmaNumber)
-            .IsRequired(false)
-            .HasMaxLength(20);
-
-        builder
             .Property(r => r.State)
             .IsRequired();
 

@@ -35,7 +35,5 @@ public class Return : EntityTrackable
 
     public string Number { get; set; }
 
-    public string? RmaNumber { get; set; }
-
     public ReturnState State { get; set; }
 }

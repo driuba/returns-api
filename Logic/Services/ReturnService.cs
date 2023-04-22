@@ -448,25 +448,15 @@ public class ReturnService : IReturnService
 
         returnLineQuantities = returnLineQuantities.ToList();
 
-        if (returnLineQuantities.Any(rlq => rlq.ProductType == ReturnProductType.Serviced))
-        {
-            if (string.IsNullOrEmpty(returnCandidate.RmaNumber))
-            {
-                errorsReturn.Add("RMA number is required for serviced product return.");
-            }
-
-            if
+        if (
+            returnLineQuantities.Any(rlq => rlq.ProductType == ReturnProductType.Serviced) &&
             (
                 returnLineQuantities.Count() > 1 ||
                 returnLineQuantities.Single().Quantity != 1
             )
-            {
-                errorsReturn.Add("Only a single serviced product may be registered within a single return document.");
-            }
-        }
-        else if (!string.IsNullOrEmpty(returnCandidate.RmaNumber))
+        )
         {
-            errorsReturn.Add("RMA number is only allowed for serviced product returns.");
+            errorsReturn.Add("Only a single serviced product may be registered within a single return document.");
         }
 
         var serialNumbersDuplicated = returnLines
