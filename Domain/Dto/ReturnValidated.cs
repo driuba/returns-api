@@ -12,6 +12,8 @@ public class ReturnValidated
 
     public string DeliveryPointId { get; set; }
 
+    public int? Id { get; set; }
+
     public int LabelCount { get; set; }
 
     public IEnumerable<ReturnLineValidated> Lines { get; set; } = Enumerable.Empty<ReturnLineValidated>();

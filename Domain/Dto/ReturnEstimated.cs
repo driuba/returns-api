@@ -14,6 +14,8 @@ public class ReturnEstimated
 
     public IEnumerable<ReturnFeeEstimated> Fees { get; set; } = Enumerable.Empty<ReturnFeeEstimated>();
 
+    public int? Id { get; set; }
+
     public int LabelCount { get; set; }
 
     public IEnumerable<ReturnLineEstimated> Lines { get; set; } = Enumerable.Empty<ReturnLineEstimated>();

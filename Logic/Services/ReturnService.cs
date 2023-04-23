@@ -248,9 +248,131 @@ public class ReturnService : IReturnService
         };
     }
 
-    public Task<ValueResponse<Domain.Entities.Return>> MergeAsync(ReturnEstimated returnCandidate)
+    public async Task<ValueResponse<Domain.Entities.Return>> MergeAsync(ReturnEstimated returnCandidate)
     {
-        throw new NotImplementedException();
+        if (!returnCandidate.Id.HasValue)
+        {
+            return new ValueResponse<Domain.Entities.Return>
+            {
+                Message = "Return identifier is required."
+            };
+        }
+
+        var returnEntity = await _dbContext
+            .Set<Domain.Entities.Return>()
+            .AsTracking()
+            .Include(r => r.Fees)
+            .Include(r => r.Lines)
+            .ThenInclude(l => l.Fees)
+            .SingleOrDefaultAsync(r => r.Id == returnCandidate.Id);
+
+        if (returnEntity is null)
+        {
+            return new ValueResponse<Domain.Entities.Return>
+            {
+                Message = $"Return {returnCandidate.Id} was not found."
+            };
+        }
+
+        var returnFees = returnCandidate.Fees
+            .GroupJoin(
+                returnEntity.Fees.Where(f => !f.ReturnLineId.HasValue),
+                f => f.Configuration.Id,
+                fe => fe.FeeConfigurationId,
+                (f, feg) =>
+                {
+                    feg = feg.ToList();
+
+                    if (!feg.Any())
+                    {
+                        return _mapper.Map<Domain.Entities.ReturnFee>(
+                            f,
+                            moo => moo.Items["returnId"] = returnEntity.Id
+                        );
+                    }
+
+                    var feeExisting = feg.First();
+
+                    feeExisting.Value = f.Value;
+
+                    return feeExisting;
+                }
+            )
+            .ToList();
+
+        var returnLines = returnCandidate.Lines
+            .GroupJoin(
+                returnEntity.Lines,
+                l => l.Id ?? 0,
+                l => l.Id,
+                (l, leg) =>
+                {
+                    leg = leg.ToList();
+
+                    if (!leg.Any())
+                    {
+                        return _mapper.Map<Domain.Entities.ReturnLine>(l);
+                    }
+
+                    var returnLineExisting = leg.First();
+
+                    returnLineExisting.Fees = l.Fees
+                        .GroupJoin(
+                            leg.SelectMany(le => le.Fees),
+                            f => f.Configuration.Id,
+                            fe => fe.FeeConfigurationId,
+                            (f, feg) =>
+                            {
+                                feg = feg.ToList();
+
+                                if (!feg.Any())
+                                {
+                                    return _mapper.Map<Domain.Entities.ReturnFee>(
+                                        f,
+                                        moo =>
+                                        {
+                                            moo.Items["returnId"] = returnEntity.Id;
+                                            moo.Items["returnLineId"] = returnLineExisting.Id;
+                                        }
+                                    );
+                                }
+
+                                var feeExisting = feg.First();
+
+                                feeExisting.Value = f.Value;
+
+                                return feeExisting;
+                            }
+                        )
+                        .ToList();
+
+                    returnLineExisting.NoteReturn = l.Note;
+                    returnLineExisting.Quantity = l.Quantity;
+
+                    return returnLineExisting;
+                }
+            )
+            .ToList();
+
+        _dbContext
+            .Set<Domain.Entities.ReturnFee>()
+            .UpdateRange(returnFees);
+
+        _dbContext
+            .Set<Domain.Entities.ReturnLine>()
+            .UpdateRange(returnLines);
+
+        returnEntity.Fees = returnFees
+            .Concat(returnLines.SelectMany(l => l.Fees))
+            .ToList();
+
+        returnEntity.Lines = returnLines;
+
+        return new ValueResponse<Domain.Entities.Return>
+        {
+            Success = true,
+            Value = returnEntity
+        };
     }
 
     public async Task<ValueResponse<Domain.Entities.Return>> UpdateAsync(Domain.Entities.Return returnCandidate)
