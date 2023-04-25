@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Deltas;
@@ -9,6 +10,7 @@ using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Returns.Api.Documentation;
 using Returns.Api.Utils;
+using Returns.Domain.Constants;
 using Returns.Domain.Services;
 using Returns.Logic.Services;
 using Returns.Logic.Utils;
@@ -77,18 +79,33 @@ builder.Services
         o.SuppressMapClientErrors = true;
     });
 
-builder.Services.AddAuthentication(o =>
-{
-    o.DefaultScheme = "mock";
-
-    o.AddScheme<MockAuthenticationHandler>("mock", "mock");
-});
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(o =>
+    {
+        builder.Configuration.Bind(nameof(JwtBearerOptions), o);
+    });
 
 builder.Services.AddAuthorization(o =>
 {
     o.DefaultPolicy = o.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
+
+    o.AddPolicy(
+        AuthorizationsPolicies.Admin,
+        b => b
+            .RequireAuthenticatedUser()
+            .RequireRole(Roles.Admin)
+    );
+
+    o.AddPolicy(
+        AuthorizationsPolicies.Reseller,
+        b => b
+            .RequireAuthenticatedUser()
+            .RequireRole(Roles.Reseller)
+            .RequireClaim(ClaimTypes.CustomerId)
+    );
 });
 
 builder.Services.AddHttpContextAccessor();
@@ -116,12 +133,22 @@ if (builder.Environment.IsDevelopment() || builder.Environment.IsStaging())
 
         o.SwaggerDoc(
             "v1",
-            new OpenApiInfo
-            {
-                Title = "Returns API",
-                Version = "v1"
-            }
+            new OpenApiInfo { Title = "Returns API", Version = "v1" }
         );
+
+        var securityScheme = new OpenApiSecurityScheme
+        {
+            BearerFormat = "JWT",
+            Description = "JWT Bearer token.",
+            In = ParameterLocation.Header,
+            Name = "JWT Authentication",
+            Reference = new OpenApiReference { Id = JwtBearerDefaults.AuthenticationScheme, Type = ReferenceType.SecurityScheme },
+            Scheme = "bearer",
+            Type = SecuritySchemeType.Http
+        };
+
+        o.AddSecurityDefinition(securityScheme.Reference.Id, securityScheme);
+        o.AddSecurityRequirement(new OpenApiSecurityRequirement { { securityScheme, Array.Empty<string>() } });
 
         o.OperationFilter<InvalidModelStateFilter>();
         o.OperationFilter<ODataDeltaFilter>();
@@ -133,18 +160,12 @@ if (builder.Environment.IsDevelopment() || builder.Environment.IsStaging())
 
         o.MapType(
             typeof(ODataQueryOptions<>),
-            () => new OpenApiSchema
-            {
-                UnresolvedReference = true
-            }
+            () => new OpenApiSchema { UnresolvedReference = true }
         );
 
         o.MapType(
             typeof(Delta<>),
-            () => new OpenApiSchema
-            {
-                UnresolvedReference = true
-            }
+            () => new OpenApiSchema { UnresolvedReference = true }
         );
     });
 }

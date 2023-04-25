@@ -2,9 +2,7 @@ namespace Returns.Domain.Constants;
 
 public static class Roles
 {
-    public const string Admin = "Admin";
+    public const string Admin = "returns-admin";
 
-    public const string AdminReadOnly = "AdminReadOnly";
-
-    public const string Reseller = "Reseller";
+    public const string Reseller = "returns-reseller";
 }

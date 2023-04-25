@@ -2,5 +2,5 @@ namespace Returns.Domain.Constants;
 
 public static class ClaimTypes
 {
-    public const string CustomerId = "CustomerId";
+    public const string CustomerId = "customer_id";
 }

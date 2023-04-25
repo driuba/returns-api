@@ -26,6 +26,8 @@ public static class ServiceCollectionExtensions
     {
         serviceCollection.AddLogging();
 
+        serviceCollection.AddHttpClient();
+
         serviceCollection.AddAutoMapper(e =>
         {
             e.AllowNullCollections = true;
@@ -121,10 +123,7 @@ public static class ServiceCollectionExtensions
     {
         return new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
-            Converters =
-            {
-                new JsonStringEnumConverter()
-            },
+            Converters = { new JsonStringEnumConverter() },
             MaxDepth = 32,
             PropertyNamingPolicy = null,
             ReferenceHandler = ReferenceHandler.IgnoreCycles

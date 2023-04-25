@@ -14,7 +14,7 @@ public class ReturnLine
 
     public bool ApplyRegistrationFee { get; set; }
 
-    public IEnumerable<ReturnLineAttachment> Attachments { get; set; } = Enumerable.Empty<ReturnLineAttachment>();
+    public IEnumerable<Guid> AttachmentIds { get; set; } = Enumerable.Empty<Guid>();
 
     public int? FeeConfigurationGroupIdDamagePackage { get; set; }
 

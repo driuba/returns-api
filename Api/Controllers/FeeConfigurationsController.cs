@@ -1,15 +1,18 @@
 using AutoMapper;
 using AutoMapper.AspNet.OData;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using Returns.Domain.Api;
+using Returns.Domain.Constants;
 using Returns.Domain.Services;
 using Returns.Logic.Repositories;
 
 namespace Returns.Api.Controllers;
 
+[Authorize(AuthorizationsPolicies.Admin)]
 public class FeeConfigurationsController : ControllerBase
 {
     private readonly ReturnDbContext _dbContext;

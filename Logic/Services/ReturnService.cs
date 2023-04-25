@@ -618,7 +618,7 @@ public class ReturnService : IReturnService
                 errorsReturnLine.Add((returnLine.Reference, "Product identifier is required."));
             }
 
-            if (validateAttachments && !returnLine.Attachments.Any())
+            if (validateAttachments && !returnLine.AttachmentIds.Any())
             {
                 // ReSharper disable once ConvertIfStatementToSwitchStatement
                 if (returnLine.ProductType == ReturnProductType.Defective)

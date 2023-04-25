@@ -6,8 +6,108 @@ public sealed class LogicProfile : AutoMapper.Profile
 {
     public LogicProfile()
     {
+        MapReturnEntity();
         MapReturnEstimated();
         MapReturnValidated();
+    }
+
+    private void MapReturnEntity()
+    {
+        var returnMap = CreateMap<ReturnEstimated, Domain.Entities.Return>();
+
+        returnMap.ConstructUsing((src, ctx) =>
+        {
+            if (ctx.Items.TryGetValue("companyId", out var item) && item is string companyId)
+            {
+                return new Domain.Entities.Return(companyId, src.CustomerId, src.DeliveryPointId, string.Empty);
+            }
+
+            throw new InvalidOperationException("Company identifier is required.");
+        });
+
+        var returnFeeMap = CreateMap<ReturnFeeEstimated, Domain.Entities.ReturnFee>();
+
+        returnFeeMap.ForMember(
+            rf => rf.ReturnId,
+            mce => mce.MapFrom(
+                (_, _, _, ctx) =>
+                {
+                    if (ctx.Items.TryGetValue("returnId", out var item) && item is int returnId)
+                    {
+                        return returnId;
+                    }
+
+                    return default(int);
+                }
+            )
+        );
+
+        returnFeeMap.ForMember(
+            rf => rf.ReturnLineId,
+            mce => mce.MapFrom(
+                (_, _, _, ctx) =>
+                {
+                    if (ctx.Items.TryGetValue("returnLineId", out var item) && item is int returnLineId)
+                    {
+                        return returnLineId;
+                    }
+
+                    return default(int?);
+                }
+            )
+        );
+
+        var returnLineMap = CreateMap<ReturnLineEstimated, Domain.Entities.ReturnLine>();
+
+        returnLineMap.ForCtorParam(
+            "invoiceNumberPurchase",
+            cpce => cpce.MapFrom(src => src.InvoiceNumber)
+        );
+
+        returnLineMap.ForMember(
+            rl => rl.NoteReturn,
+            mce => mce.MapFrom(
+                (_, _, _, ctx) =>
+                {
+                    if (ctx.Items.TryGetValue("noteReturn", out var item) && item is string noteReturn)
+                    {
+                        return noteReturn;
+                    }
+
+                    return default(string?);
+                }
+            )
+        );
+
+        returnLineMap.ForMember(
+            rl => rl.NoteResponse,
+            mce => mce.MapFrom(
+                (_, _, _, ctx) =>
+                {
+                    if (ctx.Items.TryGetValue("noteResponse", out var item) && item is string noteResponse)
+                    {
+                        return noteResponse;
+                    }
+
+                    return default(string?);
+                }
+            )
+        );
+
+        returnLineMap.ForMember(
+            rl => rl.ReturnId,
+            mce => mce.MapFrom(
+                (_, _, _, ctx) =>
+                {
+                    if (ctx.Items.TryGetValue("returnId", out var item) && item is int returnId)
+                    {
+                        return returnId;
+                    }
+
+                    return default(int);
+                }
+            )
+        );
     }
 
     private void MapReturnEstimated()
@@ -15,7 +115,15 @@ public sealed class LogicProfile : AutoMapper.Profile
         CreateMap<ReturnValidated, ReturnEstimated>().ForMember(
             rv => rv.Fees,
             mce => mce.MapFrom(
-                (_, _, _, ctx) => (IEnumerable<string>)ctx.Items["feesReturn"]
+                (_, _, _, ctx) =>
+                {
+                    if (ctx.Items.TryGetValue("feesReturn", out var item) && item is IEnumerable<string> feesReturn)
+                    {
+                        return feesReturn;
+                    }
+
+                    throw new InvalidOperationException("Return fees are required.");
+                }
             )
         );
 
@@ -24,9 +132,12 @@ public sealed class LogicProfile : AutoMapper.Profile
             mce => mce.MapFrom(
                 (src, _, _, ctx) =>
                 {
-                    var feesReturnLine = (ILookup<string, ReturnFeeEstimated>)ctx.Items["feesReturnLine"];
+                    if (ctx.Items.TryGetValue("feesReturnLine", out var item) && item is ILookup<string, ReturnFeeEstimated> feesReturnLine)
+                    {
+                        return feesReturnLine[src.Reference];
+                    }
 
-                    return feesReturnLine[src.Reference];
+                    throw new InvalidOperationException("Return line fees are required.");
                 }
             )
         );
@@ -34,7 +145,15 @@ public sealed class LogicProfile : AutoMapper.Profile
         CreateMap<ReturnEstimated, ReturnEstimated>().ForMember(
             re => re.Fees,
             mce => mce.MapFrom(
-                (_, _, _, ctx) => (IEnumerable<string>)ctx.Items["feesReturn"]
+                (_, _, _, ctx) =>
+                {
+                    if (ctx.Items.TryGetValue("feesReturn", out var item) && item is IEnumerable<string> feesReturn)
+                    {
+                        return feesReturn;
+                    }
+
+                    throw new InvalidOperationException("Return fees are required.");
+                }
             )
         );
 
@@ -43,9 +162,12 @@ public sealed class LogicProfile : AutoMapper.Profile
             mce => mce.MapFrom(
                 (src, _, _, ctx) =>
                 {
-                    var feesReturnLine = (ILookup<string, ReturnFeeEstimated>)ctx.Items["feesReturnLine"];
+                    if (ctx.Items.TryGetValue("feesReturnLine", out var item) && item is ILookup<string, ReturnFeeEstimated> feesReturnLine)
+                    {
+                        return feesReturnLine[src.Reference];
+                    }
 
-                    return feesReturnLine[src.Reference];
+                    throw new InvalidOperationException("Return line fees are required.");
                 }
             )
         );
@@ -55,7 +177,7 @@ public sealed class LogicProfile : AutoMapper.Profile
             mce => mce.MapFrom(
                 (src, _, _, ctx) =>
                 {
-                    if (ctx.Items["value"] is decimal value)
+                    if (ctx.Items.TryGetValue("value", out var item) && item is decimal value)
                     {
                         return value;
                     }
@@ -71,7 +193,15 @@ public sealed class LogicProfile : AutoMapper.Profile
         CreateMap<Return, ReturnValidated>().ForMember(
             r => r.Messages,
             mce => mce.MapFrom(
-                (_, _, _, ctx) => (IEnumerable<string>)ctx.Items["errorsReturn"]
+                (_, _, _, ctx) =>
+                {
+                    if (ctx.Items.TryGetValue("errorsReturn", out var item) && item is IEnumerable<string> errorsReturn)
+                    {
+                        return errorsReturn;
+                    }
+
+                    throw new InvalidOperationException("Return errors are required.");
+                }
             )
         );
 
@@ -80,9 +210,12 @@ public sealed class LogicProfile : AutoMapper.Profile
             mce => mce.MapFrom(
                 (src, _, _, ctx) =>
                 {
-                    var errorsReturnLine = (ILookup<string, string>)ctx.Items["errorsReturnLine"];
+                    if (ctx.Items.TryGetValue("errorsReturnLine", out var item) && item is ILookup<string, string> errorsReturnLine)
+                    {
+                        return errorsReturnLine[src.Reference];
+                    }
 
-                    return errorsReturnLine[src.Reference];
+                    throw new InvalidOperationException("Return line errors are required.");
                 }
             )
         );
