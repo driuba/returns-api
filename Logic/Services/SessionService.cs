@@ -24,7 +24,7 @@ public class SessionService : ISessionService
                 return default(string?);
             }
 
-            var customerId = (Principal as ClaimsPrincipal)?.FindFirst(c => c.ValueType == Domain.Constants.ClaimTypes.CustomerId)?.Value;
+            var customerId = (Principal as ClaimsPrincipal)?.FindFirst(Domain.Constants.ClaimTypes.CustomerId)?.Value;
 
             if (string.IsNullOrEmpty(customerId))
             {

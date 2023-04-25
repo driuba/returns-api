@@ -90,6 +90,18 @@ builder.Services.AddAuthorization(o =>
 {
     o.DefaultPolicy = o.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
+        .RequireRole(Roles.Admin, Roles.Reseller)
+        .RequireAssertion(ctx =>
+        {
+            if (!ctx.User.IsInRole(Roles.Reseller))
+            {
+                return Task.FromResult(true);
+            }
+
+            var customerId = ctx.User.FindFirst(ClaimTypes.CustomerId)?.Value;
+
+            return Task.FromResult(!string.IsNullOrEmpty(customerId));
+        })
         .Build();
 
     o.AddPolicy(
@@ -223,10 +235,10 @@ static ISessionService BuildSessionService(IServiceProvider serviceProvider)
 
     var companyId = (string?)context.GetRouteData().Values["companyId"];
 
-    if (string.IsNullOrEmpty(companyId))
+    if (string.IsNullOrEmpty(companyId) && !context.Request.Path.StartsWithSegments("/mock"))
     {
         throw new InvalidOperationException("Company identifier is required.");
     }
 
-    return new SessionService(companyId, context.User);
+    return new SessionService(companyId ?? string.Empty, context.User);
 }
