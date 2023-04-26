@@ -108,13 +108,13 @@ public sealed class ReturnDbContext : DbContext
         switch (eventArgs)
         {
             case { Entry.State: EntityState.Added }:
-                entity.Modified = DateTime.Now;
-                entity.UserModified = _sessionService?.Principal.Identity?.Name ?? "Anonymous";
+                entity.Created = DateTime.Now;
+                entity.UserCreated = _sessionService?.Principal.Identity?.Name ?? "Anonymous";
 
                 break;
             case { Entry.State: EntityState.Modified }:
-                entity.Created = DateTime.Now;
-                entity.UserCreated = _sessionService?.Principal.Identity?.Name ?? "Anonymous";
+                entity.Modified = DateTime.Now;
+                entity.UserModified = _sessionService?.Principal.Identity?.Name ?? "Anonymous";
 
                 break;
         }
