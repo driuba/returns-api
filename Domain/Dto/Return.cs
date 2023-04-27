@@ -2,13 +2,10 @@ namespace Returns.Domain.Dto;
 
 public class Return
 {
-    public Return(string customerId, string deliveryPointId)
+    public Return(string deliveryPointId)
     {
-        CustomerId = customerId;
         DeliveryPointId = deliveryPointId;
     }
-
-    public string CustomerId { get; set; }
 
     public string DeliveryPointId { get; set; }
 

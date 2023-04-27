@@ -17,12 +17,17 @@ public sealed class LogicProfile : AutoMapper.Profile
 
         returnMap.ConstructUsing((src, ctx) =>
         {
-            if (ctx.Items.TryGetValue("companyId", out var item) && item is string companyId)
+            if (!(ctx.Items.TryGetValue("companyId", out var item) && item is string companyId))
             {
-                return new Domain.Entities.Return(companyId, src.CustomerId, src.DeliveryPointId, string.Empty);
+                throw new InvalidOperationException("Company identifier is required.");
             }
 
-            throw new InvalidOperationException("Company identifier is required.");
+            if (!(ctx.Items.TryGetValue("customerId", out item) && item is string customerId))
+            {
+                throw new InvalidOperationException("Customer identifier is required.");
+            }
+
+            return new Domain.Entities.Return(companyId, customerId, src.DeliveryPointId, string.Empty);
         });
 
         var returnFeeMap = CreateMap<ReturnFeeEstimated, Domain.Entities.ReturnFee>();

@@ -86,7 +86,7 @@ public class ReturnLineService : IReturnLineService
 
         var invoiceLines = await _invoiceService
             .FilterLinesAsync(
-                returnCandidate.CustomerId,
+                deliveryPoint.CustomerId,
                 returnCandidate.Lines
                     .Select(l => l.InvoiceNumber)
                     .Distinct(StringComparer.OrdinalIgnoreCase),
@@ -115,7 +115,7 @@ public class ReturnLineService : IReturnLineService
             };
         }
 
-        var returnEstimated = await _returnFeeService.ResolveAsync(returnValidated, country, invoiceLines);
+        var returnEstimated = await _returnFeeService.ResolveAsync(returnValidated, deliveryPoint, country, invoiceLines);
 
         var response = await _returnService.MergeAsync(
             _returnFeeService.Calculate(returnEstimated, invoiceLines)
@@ -300,7 +300,7 @@ public class ReturnLineService : IReturnLineService
 
         var invoiceLines = await _invoiceService
             .FilterLinesAsync(
-                returnCandidate.CustomerId,
+                deliveryPoint.CustomerId,
                 returnCandidate.Lines
                     .Select(l => l.InvoiceNumber)
                     .Distinct(StringComparer.OrdinalIgnoreCase),
@@ -329,7 +329,7 @@ public class ReturnLineService : IReturnLineService
             };
         }
 
-        var returnEstimated = await _returnFeeService.ResolveAsync(returnValidated, country, invoiceLines);
+        var returnEstimated = await _returnFeeService.ResolveAsync(returnValidated, deliveryPoint, country, invoiceLines);
 
         var response = await _returnService.MergeAsync(
             _returnFeeService.Calculate(returnEstimated, invoiceLines)

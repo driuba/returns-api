@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Returns.Domain.Dto;
+using Returns.Domain.Dto.Customers;
 using Returns.Domain.Dto.Invoices;
 using Returns.Domain.Dto.Regions;
 using Returns.Domain.Enums;
@@ -43,34 +44,18 @@ public class ReturnFeeService : IReturnFeeService
                 invoiceLines,
                 rl => (rl.InvoiceNumber, rl.ProductId),
                 il => (il.InvoiceNumber, il.ProductId),
-                (rl, ilg) => new
-                {
-                    InvoiceLines = ilg,
-                    ReturnLine = rl
-                },
+                (rl, ilg) => new { InvoiceLines = ilg, ReturnLine = rl },
                 new ValueTupleEqualityComparer<string, string>(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase)
             )
             .Where(l => l.InvoiceLines.Any())
             .Select(l =>
             {
                 var aggregate = l.InvoiceLines.Aggregate(
-                    new
-                    {
-                        Price = 0M,
-                        Quantity = 0
-                    },
-                    (acc, il) => new
-                    {
-                        Price = acc.Price + il.PriceUnit * il.Quantity,
-                        Quantity = acc.Quantity + il.Quantity
-                    }
+                    new { Price = 0M, Quantity = 0 },
+                    (acc, il) => new { Price = acc.Price + il.PriceUnit * il.Quantity, Quantity = acc.Quantity + il.Quantity }
                 );
 
-                return new
-                {
-                    Line = l.ReturnLine,
-                    PriceUnit = aggregate.Price / aggregate.Quantity
-                };
+                return new { Line = l.ReturnLine, PriceUnit = aggregate.Price / aggregate.Quantity };
             })
             .ToList();
 
@@ -173,7 +158,12 @@ public class ReturnFeeService : IReturnFeeService
         );
     }
 
-    public async Task<ReturnEstimated> ResolveAsync(ReturnValidated returnValidated, Country? country, IEnumerable<InvoiceLine> invoiceLines)
+    public async Task<ReturnEstimated> ResolveAsync(
+        ReturnValidated returnValidated,
+        Customer deliveryPoint,
+        Country? country,
+        IEnumerable<InvoiceLine> invoiceLines
+    )
     {
         var feesReturn = new List<ReturnFeeEstimated>();
         var feesReturnLine = new List<(string Reference, ReturnFeeEstimated Fee)>();
@@ -193,11 +183,7 @@ public class ReturnFeeService : IReturnFeeService
                 invoiceLines,
                 rl => (rl.InvoiceNumber, rl.ProductId),
                 il => (il.InvoiceNumber, il.ProductId),
-                (rl, ilg) => new
-                {
-                    ilg.FirstOrDefault()?.InvoiceDate,
-                    Line = rl
-                },
+                (rl, ilg) => new { ilg.FirstOrDefault()?.InvoiceDate, Line = rl },
                 new ValueTupleEqualityComparer<string, string>(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase)
             )
             .ToList();
@@ -218,7 +204,7 @@ public class ReturnFeeService : IReturnFeeService
             );
         }
 
-        var customerId = returnValidated.CustomerId;
+        var customerId = deliveryPoint.CustomerId;
         var countryId = country?.Id;
         var regionIds = country?.Regions.Select(r => r.Id) ?? Enumerable.Empty<int>();
 
@@ -230,11 +216,7 @@ public class ReturnFeeService : IReturnFeeService
         regionIds = regionIds.ToList();
 
         var feeConfigurationGroupIds = returnLines
-            .SelectMany(rl => new[]
-            {
-                rl.Line.FeeConfigurationGroupIdDamagePackage,
-                rl.Line.FeeConfigurationGroupIdDamageProduct
-            })
+            .SelectMany(rl => new[] { rl.Line.FeeConfigurationGroupIdDamagePackage, rl.Line.FeeConfigurationGroupIdDamageProduct })
             .Where(fcgi => fcgi.HasValue)
             .Cast<int>()
             .Distinct();

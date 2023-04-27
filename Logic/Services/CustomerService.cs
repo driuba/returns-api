@@ -38,7 +38,7 @@ public class CustomerService : ICustomerService
             .Where(c => c.Id == deliveryPointId)
             .Select(c => new Customer(c.ParentId ?? c.Id, c.Id, c.Name)
             {
-                CountryId = c.CountryId
+                CountryId = string.IsNullOrEmpty(c.ParentId) ? c.CountryId : c.Parent!.CountryId
             })
             .SingleOrDefaultAsync();
     }

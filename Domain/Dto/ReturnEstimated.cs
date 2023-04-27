@@ -2,13 +2,10 @@ namespace Returns.Domain.Dto;
 
 public class ReturnEstimated
 {
-    public ReturnEstimated(string customerId, string deliveryPointId)
+    public ReturnEstimated(string deliveryPointId)
     {
-        CustomerId = customerId;
         DeliveryPointId = deliveryPointId;
     }
-
-    public string CustomerId { get; set; }
 
     public string DeliveryPointId { get; set; }
 

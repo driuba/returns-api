@@ -2,13 +2,10 @@ namespace Returns.Domain.Dto;
 
 public class ReturnValidated
 {
-    public ReturnValidated(string customerId, string deliveryPointId)
+    public ReturnValidated(string deliveryPointId)
     {
-        CustomerId = customerId;
         DeliveryPointId = deliveryPointId;
     }
-
-    public string CustomerId { get; set; }
 
     public string DeliveryPointId { get; set; }
 

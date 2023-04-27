@@ -4,13 +4,10 @@ namespace Returns.Domain.Api;
 
 public class ReturnRequest
 {
-    public ReturnRequest(string customerId, string deliveryPointId)
+    public ReturnRequest(string deliveryPointId)
     {
-        CustomerId = customerId;
         DeliveryPointId = deliveryPointId;
     }
-
-    [UsedImplicitly] public string CustomerId { get; init; }
 
     [UsedImplicitly] public string DeliveryPointId { get; init; }
 

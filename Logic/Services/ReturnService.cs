@@ -24,7 +24,6 @@ public class ReturnService : IReturnService
     private readonly IProductService _productService;
     private readonly IRegionService _regionService;
     private readonly IReturnFeeService _returnFeeService;
-    private readonly ISessionService _sessionService;
     private readonly IStorageService _storageService;
 
     public ReturnService(
@@ -38,7 +37,6 @@ public class ReturnService : IReturnService
         IProductService productService,
         IRegionService regionService,
         IReturnFeeService returnFeeService,
-        ISessionService sessionService,
         IStorageService storageService
     )
     {
@@ -51,7 +49,6 @@ public class ReturnService : IReturnService
         _productService = productService;
         _regionService = regionService;
         _returnFeeService = returnFeeService;
-        _sessionService = sessionService;
         _storageService = storageService;
     }
 
@@ -61,17 +58,14 @@ public class ReturnService : IReturnService
 
         if (deliveryPoint is null)
         {
-            return new ValueResponse<Domain.Entities.Return>
-            {
-                Message = $"Delivery point {returnCandidate.DeliveryPointId} was not found."
-            };
+            return new ValueResponse<Domain.Entities.Return> { Message = $"Delivery point {returnCandidate.DeliveryPointId} was not found." };
         }
 
         var country = await _regionService.GetCountryAsync(deliveryPoint.CountryId);
 
         var invoiceLines = await _invoiceService
             .FilterLinesAsync(
-                returnCandidate.CustomerId,
+                deliveryPoint.CustomerId,
                 returnCandidate.Lines
                     .Select(l => l.InvoiceNumber)
                     .Distinct(StringComparer.OrdinalIgnoreCase),
@@ -102,12 +96,14 @@ public class ReturnService : IReturnService
 
         var returnEstimated = await _returnFeeService.ResolveAsync(
             returnValidated,
+            deliveryPoint,
             country,
             invoiceLines
         );
 
         var returnEntity = _mapper.Map<Domain.Entities.Return>(
-            _returnFeeService.Calculate(returnEstimated, invoiceLines)
+            _returnFeeService.Calculate(returnEstimated, invoiceLines),
+            moo => moo.Items["customerId"] = deliveryPoint.CustomerId
         );
 
         await using var transaction = await _dbContext.Database.BeginTransactionAsync();
@@ -134,17 +130,10 @@ public class ReturnService : IReturnService
 
             await transaction.RollbackAsync();
 
-            return new ValueResponse<Domain.Entities.Return>
-            {
-                Message = "Failed to save the return."
-            };
+            return new ValueResponse<Domain.Entities.Return> { Message = "Failed to save the return." };
         }
 
-        return new ValueResponse<Domain.Entities.Return>
-        {
-            Success = true,
-            Value = returnEntity
-        };
+        return new ValueResponse<Domain.Entities.Return> { Success = true, Value = returnEntity };
     }
 
     public async Task<ValueResponse<Domain.Entities.Return>> DeleteAsync(int id)
@@ -158,10 +147,7 @@ public class ReturnService : IReturnService
 
         if (returnExisting is null)
         {
-            return new ValueResponse<Domain.Entities.Return>
-            {
-                Message = $"Return {id} was not found."
-            };
+            return new ValueResponse<Domain.Entities.Return> { Message = $"Return {id} was not found." };
         }
 
         if (returnExisting.State != ReturnState.New)
@@ -184,11 +170,7 @@ public class ReturnService : IReturnService
 
             if (!response.Success)
             {
-                return new ValueResponse<Domain.Entities.Return>
-                {
-                    Message = response.Message,
-                    Messages = response.Messages
-                };
+                return new ValueResponse<Domain.Entities.Return> { Message = response.Message, Messages = response.Messages };
             }
         }
 
@@ -198,11 +180,7 @@ public class ReturnService : IReturnService
 
         await _dbContext.SaveChangesAsync();
 
-        return new ValueResponse<Domain.Entities.Return>
-        {
-            Success = true,
-            Value = returnExisting
-        };
+        return new ValueResponse<Domain.Entities.Return> { Success = true, Value = returnExisting };
     }
 
     public async Task<ValueResponse<ReturnEstimated>> EstimateAsync(Return returnCandidate)
@@ -211,17 +189,14 @@ public class ReturnService : IReturnService
 
         if (deliveryPoint is null)
         {
-            return new ValueResponse<ReturnEstimated>
-            {
-                Message = $"Delivery point {returnCandidate.DeliveryPointId} was not found."
-            };
+            return new ValueResponse<ReturnEstimated> { Message = $"Delivery point {returnCandidate.DeliveryPointId} was not found." };
         }
 
         var country = await _regionService.GetCountryAsync(deliveryPoint.CountryId);
 
         var invoiceLines = await _invoiceService
             .FilterLinesAsync(
-                returnCandidate.CustomerId,
+                deliveryPoint.CustomerId,
                 returnCandidate.Lines
                     .Select(l => l.InvoiceNumber)
                     .Distinct(StringComparer.OrdinalIgnoreCase),
@@ -239,23 +214,16 @@ public class ReturnService : IReturnService
             validateAttachments: false
         );
 
-        var returnEstimated = await _returnFeeService.ResolveAsync(returnValidated, country, invoiceLines);
+        var returnEstimated = await _returnFeeService.ResolveAsync(returnValidated, deliveryPoint, country, invoiceLines);
 
-        return new ValueResponse<ReturnEstimated>
-        {
-            Success = true,
-            Value = _returnFeeService.Calculate(returnEstimated, invoiceLines)
-        };
+        return new ValueResponse<ReturnEstimated> { Success = true, Value = _returnFeeService.Calculate(returnEstimated, invoiceLines) };
     }
 
     public async Task<ValueResponse<Domain.Entities.Return>> MergeAsync(ReturnEstimated returnCandidate)
     {
         if (!returnCandidate.Id.HasValue)
         {
-            return new ValueResponse<Domain.Entities.Return>
-            {
-                Message = "Return identifier is required."
-            };
+            return new ValueResponse<Domain.Entities.Return> { Message = "Return identifier is required." };
         }
 
         var returnEntity = await _dbContext
@@ -268,10 +236,7 @@ public class ReturnService : IReturnService
 
         if (returnEntity is null)
         {
-            return new ValueResponse<Domain.Entities.Return>
-            {
-                Message = $"Return {returnCandidate.Id} was not found."
-            };
+            return new ValueResponse<Domain.Entities.Return> { Message = $"Return {returnCandidate.Id} was not found." };
         }
 
         var returnFees = returnCandidate.Fees
@@ -368,21 +333,14 @@ public class ReturnService : IReturnService
 
         returnEntity.Lines = returnLines;
 
-        return new ValueResponse<Domain.Entities.Return>
-        {
-            Success = true,
-            Value = returnEntity
-        };
+        return new ValueResponse<Domain.Entities.Return> { Success = true, Value = returnEntity };
     }
 
     public async Task<ValueResponse<Domain.Entities.Return>> UpdateAsync(Domain.Entities.Return returnCandidate)
     {
         if (returnCandidate.LabelCount < 0)
         {
-            return new ValueResponse<Domain.Entities.Return>
-            {
-                Message = "Label count must be a non-negative integer."
-            };
+            return new ValueResponse<Domain.Entities.Return> { Message = "Label count must be a non-negative integer." };
         }
 
         var returnExisting = await _dbContext
@@ -392,10 +350,7 @@ public class ReturnService : IReturnService
 
         if (returnExisting is null)
         {
-            return new ValueResponse<Domain.Entities.Return>
-            {
-                Message = $"Return {returnCandidate.Id} was not found."
-            };
+            return new ValueResponse<Domain.Entities.Return> { Message = $"Return {returnCandidate.Id} was not found." };
         }
 
         if (returnExisting.State != ReturnState.New)
@@ -410,11 +365,7 @@ public class ReturnService : IReturnService
 
         await _dbContext.SaveChangesAsync();
 
-        return new ValueResponse<Domain.Entities.Return>
-        {
-            Success = true,
-            Value = returnExisting
-        };
+        return new ValueResponse<Domain.Entities.Return> { Success = true, Value = returnExisting };
     }
 
     public async Task<ReturnValidated> ValidateAsync(
@@ -427,20 +378,6 @@ public class ReturnService : IReturnService
     {
         var errorsReturn = new List<string>();
         var errorsReturnLine = new List<(string Reference, string Message)>();
-
-        if (string.IsNullOrEmpty(returnCandidate.CustomerId))
-        {
-            errorsReturn.Add("Customer identifier is required.");
-        }
-        else if (
-            !(
-                string.IsNullOrEmpty(_sessionService.CustomerId) ||
-                string.Equals(returnCandidate.CustomerId, _sessionService.CustomerId, StringComparison.OrdinalIgnoreCase)
-            )
-        )
-        {
-            errorsReturn.Add($"Customer {returnCandidate.CustomerId} is not valid for return.");
-        }
 
         if (string.IsNullOrEmpty(returnCandidate.DeliveryPointId))
         {
@@ -471,11 +408,6 @@ public class ReturnService : IReturnService
                     );
                 }
             );
-        }
-
-        if (!string.Equals(returnCandidate.CustomerId, deliveryPoint.CustomerId, StringComparison.OrdinalIgnoreCase))
-        {
-            errorsReturn.Add($"Delivery point {returnCandidate.DeliveryPointId} does not belong to customer {returnCandidate.CustomerId}.");
         }
 
         if (errorsReturn.Any())
@@ -548,17 +480,13 @@ public class ReturnService : IReturnService
                     Lines = r.Lines
                         // ReSharper disable once AccessToModifiedClosure
                         .Where(l => !returnLineIdsExcluded.Contains(l.Id))
-                        .Select(l => new
-                        {
-                            l.ProductType,
-                            l.Quantity
-                        })
+                        .Select(l => new { l.ProductType, l.Quantity })
                 })
                 .SingleOrDefaultAsync();
 
             if (returnExisting is null)
             {
-                errorsReturn.Add($"Customer {returnCandidate.CustomerId} return {returnCandidate.Id} was not found.");
+                errorsReturn.Add($"Return {returnCandidate.Id} was not found.");
             }
             else
             {
@@ -663,11 +591,7 @@ public class ReturnService : IReturnService
 
         var feeConfigurationGroupIds = returnLines
             .Where(rl => rl.ProductType == ReturnProductType.New)
-            .SelectMany(rl => new[]
-            {
-                rl.FeeConfigurationGroupIdDamagePackage,
-                rl.FeeConfigurationGroupIdDamageProduct
-            })
+            .SelectMany(rl => new[] { rl.FeeConfigurationGroupIdDamagePackage, rl.FeeConfigurationGroupIdDamageProduct })
             .Where(fcgi => fcgi.HasValue)
             .Cast<int>()
             .Distinct()
@@ -788,11 +712,7 @@ public class ReturnService : IReturnService
                 products,
                 rl => rl.ProductId,
                 p => p.Id,
-                (rl, p) => new
-                {
-                    Product = p,
-                    Line = rl
-                },
+                (rl, p) => new { Product = p, Line = rl },
                 StringComparer.OrdinalIgnoreCase
             )
             .ToList();
@@ -911,17 +831,8 @@ public class ReturnService : IReturnService
             .Where(rl => !returnLineIdsExcluded.Contains(rl.Id))
             .Where(rl => invoiceNumbers.Contains(rl.InvoiceNumberPurchase))
             .Where(rl => productIds.Contains(rl.ProductId))
-            .GroupBy(rl => new
-            {
-                rl.InvoiceNumberPurchase,
-                rl.ProductId
-            })
-            .Select(g => new
-            {
-                g.Key.InvoiceNumberPurchase,
-                g.Key.ProductId,
-                Quantity = g.Sum(rl => rl.Quantity)
-            })
+            .GroupBy(rl => new { rl.InvoiceNumberPurchase, rl.ProductId })
+            .Select(g => new { g.Key.InvoiceNumberPurchase, g.Key.ProductId, Quantity = g.Sum(rl => rl.Quantity) })
             .ToListAsync();
 
         var comparer = new ValueTupleEqualityComparer<string, string>(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
@@ -1103,9 +1014,7 @@ public class ReturnService : IReturnService
                 .Intersect(returnAvailabilities.Keys)
                 .ToList();
 
-            availability = regionIds.Any()
-                ? returnAvailabilities[regionIds.First(ri => returnAvailabilities.ContainsKey(ri))]
-                : returnAvailabilities[default(int)];
+            availability = returnAvailabilities[regionIds.Any() ? regionIds.First() : default(int)];
         }
 
         errorsReturnLine.AddRange(

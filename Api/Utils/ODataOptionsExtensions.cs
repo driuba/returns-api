@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
+using Returns.Domain.Api;
 
 namespace Returns.Api.Utils;
 
@@ -15,17 +16,37 @@ internal static class ODataOptionsExtensions
     {
         var builder = new ODataConventionModelBuilder();
 
-        builder.EntitySet<Domain.Api.FeeConfiguration>("feeConfigurations");
-        builder.EntitySet<Domain.Api.FeeConfigurationGroup>("feeConfigurationGroups");
-        builder.EntitySet<Domain.Api.Return>("returns");
-        builder.EntitySet<Domain.Api.ReturnAvailability>("returnAvailabilities");
-        builder.EntitySet<Domain.Api.ReturnFee>("returnFees");
-        builder.EntitySet<Domain.Api.ReturnLine>("returnLines");
-        builder.EntitySet<Domain.Api.ReturnLineAttachment>("returnLineAttachments");
+        builder.EntitySet<FeeConfiguration>("feeConfigurations");
+        builder.EntitySet<FeeConfigurationGroup>("feeConfigurationGroups");
+        builder.EntitySet<Return>("returns");
+        builder.EntitySet<ReturnAvailability>("returnAvailabilities");
+        builder.EntitySet<ReturnFee>("returnFees");
+        builder.EntitySet<ReturnLine>("returnLines");
+        builder.EntitySet<ReturnLineAttachment>("returnLineAttachments");
 
         builder
-            .EntityType<Domain.Api.ReturnLineAttachment>()
+            .EntityType<ReturnLineAttachment>()
             .HasKey(rla => rla.StorageId);
+
+        var action = builder
+            .EntityType<Return>().Collection
+            .Action("estimate");
+
+        action
+            .Parameter<ReturnRequest>("request")
+            .Required();
+
+        action.Returns<ReturnEstimated>();
+
+        var function = builder
+            .EntityType<ReturnAvailability>().Collection
+            .Function("filter");
+
+        function
+            .Parameter<string>("deliveryPointId")
+            .Required();
+
+        function.ReturnsFromEntitySet<ReturnAvailability>("returnAvailabilities");
 
         return builder.GetEdmModel();
     }
