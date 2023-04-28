@@ -124,7 +124,9 @@ public class FeeConfigurationService : IFeeConfigurationService
             {
                 Message =
                     $"Fee configuration group {feeConfigurationGroup.Name} already has fee configuration for " +
-                    $"{(string.IsNullOrEmpty(feeConfigurationCandidate.CustomerId) ? $"{feeConfigurationCandidate.RegionId:D3}" : feeConfigurationCandidate.CustomerId)}."
+                    $"{(string.IsNullOrEmpty(feeConfigurationCandidate.CustomerId)
+                        ? $"region {feeConfigurationCandidate.RegionId:D3}"
+                        : $"customer {feeConfigurationCandidate.CustomerId}")}."
             };
         }
 

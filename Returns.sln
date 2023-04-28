@@ -6,6 +6,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logic", "Logic\Logic.csproj", "{A1D531DB-FC1F-4214-9F99-ED0D77698712}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Resources", "Resources", "{1B228775-0877-4B39-9019-9258363ADEEF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Databases", "Databases", "{7D60BBD1-D8FA-4DB1-961E-EC09A95C024E}"
+	ProjectSection(SolutionItems) = preProject
+		Resources\Databases\countries.csv = Resources\Databases\countries.csv
+		Resources\Databases\mock.db = Resources\Databases\mock.db
+		Resources\Databases\mock.sqbpro = Resources\Databases\mock.sqbpro
+		Resources\Databases\returns.db = Resources\Databases\returns.db
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Attachments", "Attachments", "{999A2D65-4416-47F4-9BF9-55C7DA5F121E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +36,9 @@ Global
 		{A1D531DB-FC1F-4214-9F99-ED0D77698712}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1D531DB-FC1F-4214-9F99-ED0D77698712}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1D531DB-FC1F-4214-9F99-ED0D77698712}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7D60BBD1-D8FA-4DB1-961E-EC09A95C024E} = {1B228775-0877-4B39-9019-9258363ADEEF}
+		{999A2D65-4416-47F4-9BF9-55C7DA5F121E} = {1B228775-0877-4B39-9019-9258363ADEEF}
 	EndGlobalSection
 EndGlobal

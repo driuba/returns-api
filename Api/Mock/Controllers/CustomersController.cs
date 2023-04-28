@@ -45,7 +45,7 @@ public class CustomersController : ControllerBase
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> Get(string companyId, string? search)
+    public async Task<IActionResult> Get(string companyId, bool parent = false, string? search = null)
     {
         return Ok(
             await _dbContext
@@ -60,6 +60,7 @@ public class CustomersController : ControllerBase
                     c.Id == _sessionService.CustomerId ||
                     c.ParentId == _sessionService.CustomerId
                 )
+                .Where(c => !parent || string.IsNullOrEmpty(c.ParentId))
                 .Where(c =>
                     string.IsNullOrEmpty(search) ||
                     EF.Functions.Like(c.Id, $"%{search}%") ||
