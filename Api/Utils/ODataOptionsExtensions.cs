@@ -54,7 +54,7 @@ internal static class ODataOptionsExtensions
             .Parameter<FilterInvoiceLinesRequest>("request")
             .Required();
 
-        action.ReturnsCollection<Domain.Dto.InvoiceLineReturnable>();
+        action.ReturnsCollection<InvoiceLineReturnable>();
 
         return builder.GetEdmModel();
     }

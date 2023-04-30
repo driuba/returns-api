@@ -7,4 +7,6 @@ public class ReturnLineEstimated : ReturnLineValidated
     }
 
     public IEnumerable<ReturnFeeEstimated> Fees { get; set; } = Enumerable.Empty<ReturnFeeEstimated>();
+
+    public decimal PriceUnit { get; set; }
 }

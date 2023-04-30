@@ -5,30 +5,21 @@ namespace Returns.Domain.Api;
 
 public class ReturnLineRequest
 {
-    public ReturnLineRequest(string invoiceNumber, string productId, string reference)
-    {
-        InvoiceNumber = invoiceNumber;
-        ProductId = productId;
-        Reference = reference;
-    }
+    public int? FeeConfigurationGroupIdDamagePackage { get; init; }
 
-    [UsedImplicitly] public int? FeeConfigurationGroupIdDamagePackage { get; init; }
+    public int? FeeConfigurationGroupIdDamageProduct { get; init; }
 
-    [UsedImplicitly] public int? FeeConfigurationGroupIdDamageProduct { get; init; }
+    public string InvoiceNumber { get; init; } = default!;
 
-    [UsedImplicitly] public string InvoiceNumber { get; init; }
+    public string? Note { get; init; }
 
-    [UsedImplicitly] public string? Note { get; init; }
+    public string ProductId { get; init; } = default!;
 
-    [UsedImplicitly] public string ProductId { get; init; }
+    public ReturnProductType ProductType { get; init; }
 
-    [UsedImplicitly] public ReturnProductType ProductType { get; init; }
+    public int Quantity { get; init; }
 
-    [UsedImplicitly] public int Quantity { get; init; }
+    public string Reference { get; init; } = default!;
 
-    [UsedImplicitly] public string Reference { get; init; }
-
-    [UsedImplicitly] public DateTime? Returned { get; init; }
-
-    [UsedImplicitly] public string? SerialNumber { get; init; }
+    public string? SerialNumber { get; init; }
 }

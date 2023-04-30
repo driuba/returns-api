@@ -14,7 +14,17 @@ public sealed class ApiProfile : AutoMapper.Profile
     {
         CreateMap<Domain.Api.ReturnRequest, Domain.Dto.Return>();
 
-        CreateMap<Domain.Api.ReturnLineRequest, Domain.Dto.ReturnLine>();
+        CreateMap<Domain.Api.ReturnLineRequest, Domain.Dto.ReturnLine>().ForMember(
+            rl => rl.ApplyRegistrationFee,
+            mce => mce.MapFrom(
+                (_, _, _, ctx) =>
+                    ctx.Items.TryGetValue("applyRegistrationFee", out var item) &&
+                    item is bool applyRegistrationFee &&
+                    applyRegistrationFee
+            )
+        );
+
+        CreateMap<Domain.Dto.InvoiceLineReturnable, Domain.Api.InvoiceLineReturnable>();
 
         CreateMap<Domain.Dto.Response, Domain.Api.Response>();
 
@@ -26,7 +36,10 @@ public sealed class ApiProfile : AutoMapper.Profile
 
         CreateMap<Domain.Dto.ReturnLineEstimated, Domain.Api.ReturnLineEstimated>();
 
-        CreateMap<Domain.Dto.ReturnFeeEstimated, Domain.Api.ReturnFeeEstimated>();
+        CreateMap<Domain.Dto.ReturnFeeEstimated, Domain.Api.ReturnFeeEstimated>().ForMember(
+            rfe => rfe.FeeConfigurationGroupId,
+            mce => mce.MapFrom(src => src.Configuration.FeeConfigurationGroupId)
+        );
     }
 
     private void MapEntities()

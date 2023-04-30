@@ -177,13 +177,13 @@ public class FeeConfigurationService : IFeeConfigurationService
 
         if (feeConfiguration.Fees.Any())
         {
-            _dbContext
-                .Set<FeeConfiguration>()
-                .Remove(feeConfiguration);
+            feeConfiguration.Deleted = true;
         }
         else
         {
-            feeConfiguration.Deleted = true;
+            _dbContext
+                .Set<FeeConfiguration>()
+                .Remove(feeConfiguration);
         }
 
         await _dbContext.SaveChangesAsync();

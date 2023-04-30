@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using Returns.Domain.Api;
+using Returns.Domain.Constants;
 using Returns.Domain.Services;
 using Returns.Logic.Repositories;
 
@@ -15,12 +16,19 @@ public class ReturnsController : ControllerBase
     private readonly ReturnDbContext _dbContext;
     private readonly IMapper _mapper;
     private readonly IReturnService _returnService;
+    private readonly ISessionService _sessionService;
 
-    public ReturnsController(ReturnDbContext dbContext, IMapper mapper, IReturnService returnService)
+    public ReturnsController(
+        ReturnDbContext dbContext,
+        IMapper mapper,
+        IReturnService returnService,
+        ISessionService sessionService
+    )
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _returnService = returnService;
+        _sessionService = sessionService;
     }
 
     [HttpDelete("returns({id:int})")]
@@ -39,10 +47,13 @@ public class ReturnsController : ControllerBase
     }
 
     [HttpPost("returns/estimate")]
-    public async Task<IActionResult> Estimate(string companyId, ReturnRequest returnCandidate)
+    public async Task<IActionResult> Estimate(string companyId, ReturnRequest request)
     {
         var response = await _returnService.EstimateAsync(
-            _mapper.Map<Domain.Dto.Return>(returnCandidate)
+            _mapper.Map<Domain.Dto.Return>(
+                request,
+                moo => moo.Items["applyRegistrationFee"] = _sessionService.Principal.IsInRole(Roles.Admin)
+            )
         );
 
         if (response.Success)
@@ -118,10 +129,13 @@ public class ReturnsController : ControllerBase
     }
 
     [HttpPost("returns")]
-    public async Task<IActionResult> Post(string companyId, ReturnRequest returnCandidate)
+    public async Task<IActionResult> Post(string companyId, ReturnRequest request)
     {
         var response = await _returnService.CreateAsync(
-            _mapper.Map<Domain.Dto.Return>(returnCandidate)
+            _mapper.Map<Domain.Dto.Return>(
+                request,
+                moo => moo.Items["applyRegistrationFee"] = _sessionService.Principal.IsInRole(Roles.Admin)
+            )
         );
 
         if (response.Success)

@@ -1,17 +1,10 @@
-using JetBrains.Annotations;
-
 namespace Returns.Domain.Api;
 
 public class ReturnRequest
 {
-    public ReturnRequest(string deliveryPointId)
-    {
-        DeliveryPointId = deliveryPointId;
-    }
+    public string DeliveryPointId { get; init; } = default!;
 
-    [UsedImplicitly] public string DeliveryPointId { get; init; }
+    public int LabelCount { get; init; }
 
-    [UsedImplicitly] public int LabelCount { get; init; }
-
-    [UsedImplicitly] public IEnumerable<ReturnLineRequest> Lines { get; init; } = Enumerable.Empty<ReturnLineRequest>();
+    public IEnumerable<ReturnLineRequest> Lines { get; init; } = Enumerable.Empty<ReturnLineRequest>();
 }

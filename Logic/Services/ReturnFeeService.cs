@@ -55,7 +55,10 @@ public class ReturnFeeService : IReturnFeeService
                     (acc, il) => new { Price = acc.Price + il.PriceUnit * il.Quantity, Quantity = acc.Quantity + il.Quantity }
                 );
 
-                return new { Line = l.ReturnLine, PriceUnit = aggregate.Price / aggregate.Quantity };
+                return _mapper.Map<ReturnLineEstimated>(
+                    l.ReturnLine,
+                    moo => moo.Items["priceUnit"] = aggregate.Price / aggregate.Quantity
+                );
             })
             .ToList();
 
@@ -76,12 +79,12 @@ public class ReturnFeeService : IReturnFeeService
         }
 
         var returnLinesNew = returnLines
-            .Where(rl => rl.Line.ProductType == ReturnProductType.New)
+            .Where(rl => rl.ProductType == ReturnProductType.New)
             .ToList();
 
         if (returnLinesNew.Any())
         {
-            var priceTotal = returnLinesNew.Sum(rl => rl.PriceUnit * rl.Line.Quantity);
+            var priceTotal = returnLinesNew.Sum(rl => rl.PriceUnit * rl.Quantity);
 
             feesReturn.AddRange(
                 returnEstimated.Fees.Select(f => _mapper.Map<ReturnFeeEstimated>(
@@ -113,10 +116,10 @@ public class ReturnFeeService : IReturnFeeService
 
         feesReturnLine.AddRange(
             returnLines.SelectMany(
-                rl => rl.Line.Fees,
+                rl => rl.Fees,
                 (rl, f) =>
                 (
-                    rl.Line.Reference,
+                    rl.Reference,
                     _mapper.Map<ReturnFeeEstimated>(
                         f,
                         moo =>
@@ -129,7 +132,7 @@ public class ReturnFeeService : IReturnFeeService
                             }
                             else
                             {
-                                value = rl.PriceUnit * rl.Line.Quantity * f.Configuration.Value;
+                                value = rl.PriceUnit * rl.Quantity * f.Configuration.Value;
 
                                 if (f.Configuration.ValueMinimum.HasValue)
                                 {
@@ -154,6 +157,7 @@ public class ReturnFeeService : IReturnFeeService
                     frl => frl.Fee,
                     StringComparer.OrdinalIgnoreCase
                 );
+                moo.Items["returnLines"] = returnLines;
             }
         );
     }

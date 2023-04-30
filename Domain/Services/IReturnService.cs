@@ -13,7 +13,7 @@ public interface IReturnService
 
     Task<ValueResponse<ReturnEstimated>> EstimateAsync(Return returnCandidate);
 
-    Task<IEnumerable<InvoiceLineReturnable>> FilterInvoiceLinesReturnableAsync(
+    Task<IQueryable<InvoiceLineReturnable>> FilterInvoiceLinesReturnableAsync(
         string deliveryPointId,
         DateTime? from,
         string? productId,

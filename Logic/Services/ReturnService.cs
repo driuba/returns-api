@@ -24,6 +24,7 @@ public class ReturnService : IReturnService
     private readonly IProductService _productService;
     private readonly IRegionService _regionService;
     private readonly IReturnFeeService _returnFeeService;
+    private readonly ISessionService _sessionService;
     private readonly IStorageService _storageService;
 
     public ReturnService(
@@ -37,6 +38,7 @@ public class ReturnService : IReturnService
         IProductService productService,
         IRegionService regionService,
         IReturnFeeService returnFeeService,
+        ISessionService sessionService,
         IStorageService storageService
     )
     {
@@ -49,6 +51,7 @@ public class ReturnService : IReturnService
         _productService = productService;
         _regionService = regionService;
         _returnFeeService = returnFeeService;
+        _sessionService = sessionService;
         _storageService = storageService;
     }
 
@@ -103,8 +106,11 @@ public class ReturnService : IReturnService
 
         var returnEntity = _mapper.Map<Domain.Entities.Return>(
             _returnFeeService.Calculate(returnEstimated, invoiceLines),
-            moo => moo.Items["customerId"] = deliveryPoint.CustomerId
-        );
+            moo =>
+            {
+                moo.Items["companyId"] = _sessionService.CompanyId;
+                moo.Items["customerId"] = deliveryPoint.CustomerId;
+            });
 
         await using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
@@ -219,7 +225,7 @@ public class ReturnService : IReturnService
         return new ValueResponse<ReturnEstimated> { Success = true, Value = _returnFeeService.Calculate(returnEstimated, invoiceLines) };
     }
 
-    public async Task<IEnumerable<InvoiceLineReturnable>> FilterInvoiceLinesReturnableAsync(
+    public async Task<IQueryable<InvoiceLineReturnable>> FilterInvoiceLinesReturnableAsync(
         string deliveryPointId,
         DateTime? from,
         string? productId,
@@ -233,7 +239,9 @@ public class ReturnService : IReturnService
 
         if (deliveryPoint is null)
         {
-            return Enumerable.Empty < InvoiceLineReturnable>();
+            return Enumerable
+                .Empty<InvoiceLineReturnable>()
+                .AsQueryable();
         }
 
         var invoiceLines = await _invoiceService
@@ -242,7 +250,9 @@ public class ReturnService : IReturnService
 
         if (!invoiceLines.Any())
         {
-            return Enumerable.Empty<InvoiceLineReturnable>();
+            return Enumerable
+                .Empty<InvoiceLineReturnable>()
+                .AsQueryable();
         }
 
         var invoiceNumbers = invoiceLines
@@ -293,7 +303,8 @@ public class ReturnService : IReturnService
                     }),
                 StringComparer.OrdinalIgnoreCase
             )
-            .ToList();
+            .ToList()
+            .AsQueryable();
     }
 
     public async Task<ValueResponse<Domain.Entities.Return>> MergeAsync(ReturnEstimated returnCandidate)

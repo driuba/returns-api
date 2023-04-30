@@ -78,6 +78,7 @@ public class InvoiceService : IInvoiceService
     {
         var query = _dbContext
             .Set<Domain.Mock.InvoiceLine>()
+            .OrderByDescending(il => il.Invoice.Created)
             .Where(il => il.Invoice.CompanyId == _sessionService.CompanyId)
             .Where(il => il.Invoice.CustomerId == customerId)
             .Where(il =>
@@ -122,7 +123,6 @@ public class InvoiceService : IInvoiceService
         }
 
         return await query
-            .OrderByDescending(il => il.Invoice.Created)
             .Select(il => new InvoiceLine(il.Invoice.CustomerId, il.Invoice.Number, il.ProductId)
             {
                 Id = il.Id,
