@@ -40,8 +40,9 @@ public class CustomersController : ControllerBase
                     c.ParentId == _sessionService.CustomerId
                 )
                 .Where(c => request.CustomerIds.Contains(c.Id))
+                .Select(c => new { c.Id, c.Name, c.ParentId })
                 .ToListAsync()
-            );
+        );
     }
 
     [HttpGet("")]
@@ -66,6 +67,7 @@ public class CustomersController : ControllerBase
                     EF.Functions.Like(c.Id, $"%{search}%") ||
                     EF.Functions.Like(c.Name, $"%{search}%")
                 )
+                .Select(c => new { c.Id, c.Name, c.ParentId })
                 .ToListAsync()
         );
     }

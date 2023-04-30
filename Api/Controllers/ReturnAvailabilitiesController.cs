@@ -46,7 +46,6 @@ public class ReturnAvailabilitiesController : ControllerBase
         return Ok(
             _mapper.Map<ReturnAvailability>(returnAvailability)
         );
-
     }
 
     [HttpGet("returnAvailabilities")]

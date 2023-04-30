@@ -16,7 +16,11 @@ public class InvoiceService : IInvoiceService
         _sessionService = sessionService;
     }
 
-    public async Task<IEnumerable<InvoiceLine>> FilterLinesAsync(string customerId, IEnumerable<string> invoiceNumbers, IEnumerable<string> productIds)
+    public async Task<IEnumerable<InvoiceLine>> FilterLinesAsync(
+        string customerId,
+        IEnumerable<string> invoiceNumbers,
+        IEnumerable<string> productIds
+    )
     {
         if (string.IsNullOrEmpty(customerId))
         {
@@ -34,7 +38,11 @@ public class InvoiceService : IInvoiceService
         var query = _dbContext
             .Set<Domain.Mock.InvoiceLine>()
             .Where(il => il.Invoice.CompanyId == _sessionService.CompanyId)
-            .Where(il => il.Invoice.CustomerId == customerId);
+            .Where(il => il.Invoice.CustomerId == customerId)
+            .Where(il =>
+                string.IsNullOrEmpty(_sessionService.CustomerId) ||
+                il.Invoice.CustomerId == _sessionService.CustomerId
+            );
 
         if (invoiceNumbers.Any())
         {
@@ -49,6 +57,75 @@ public class InvoiceService : IInvoiceService
         return await query
             .Select(il => new InvoiceLine(il.Invoice.CustomerId, il.Invoice.Number, il.ProductId)
             {
+                Id = il.Id,
+                InvoiceDate = il.Invoice.Created,
+                PriceUnit = il.PriceUnit,
+                Quantity = il.Quantity,
+                SerialNumber = il.SerialNumber
+            })
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<InvoiceLine>> FilterLinesAsync(
+        string customerId,
+        DateTime? from,
+        string? productId,
+        string? search,
+        int? skip,
+        DateTime? to,
+        int? top
+    )
+    {
+        var query = _dbContext
+            .Set<Domain.Mock.InvoiceLine>()
+            .Where(il => il.Invoice.CompanyId == _sessionService.CompanyId)
+            .Where(il => il.Invoice.CustomerId == customerId)
+            .Where(il =>
+                string.IsNullOrEmpty(_sessionService.CustomerId) ||
+                il.Invoice.CustomerId == _sessionService.CustomerId
+            );
+
+        if (from.HasValue)
+        {
+            query = query.Where(il => il.Invoice.Created.Date >= from.Value.Date);
+        }
+
+        if (!string.IsNullOrEmpty(productId))
+        {
+            query = query.Where(il => il.ProductId == productId);
+        }
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            query = query.Where(il =>
+                EF.Functions.Like(il.Invoice.Number, $"%{search}%") ||
+                (
+                    !string.IsNullOrEmpty(il.SerialNumber) &&
+                    EF.Functions.Like(il.SerialNumber, $"%{search}%")
+                )
+            );
+        }
+
+        if (to.HasValue)
+        {
+            query = query.Where(il => il.Invoice.Created.Date <= to.Value.Date);
+        }
+
+        if (skip.HasValue)
+        {
+            query = query.Skip(skip.Value);
+        }
+
+        if (top.HasValue)
+        {
+            query = query.Take(top.Value);
+        }
+
+        return await query
+            .OrderByDescending(il => il.Invoice.Created)
+            .Select(il => new InvoiceLine(il.Invoice.CustomerId, il.Invoice.Number, il.ProductId)
+            {
+                Id = il.Id,
                 InvoiceDate = il.Invoice.Created,
                 PriceUnit = il.PriceUnit,
                 Quantity = il.Quantity,

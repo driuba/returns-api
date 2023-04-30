@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Returns.Logic.Mock.Repositories;
 
@@ -10,9 +11,11 @@ using Returns.Logic.Mock.Repositories;
 namespace Returns.Logic.Mock.Migrations
 {
     [DbContext(typeof(MockDbContext))]
-    partial class MockDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230429091620_Product_Add_Name")]
+    partial class Product_Add_Name
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.5");

@@ -12,7 +12,7 @@ public class MockDesignTimeDbContextFactory : IDesignTimeDbContextFactory<MockDb
         var builder = new DbContextOptionsBuilder<MockDbContext>();
 
         builder.UseSqlite(
-            Environment.ExpandEnvironmentVariables(@"DataSource=%HOME%/Repos/returns/uni/databases/mock.db;Mode=ReadWrite"),
+            Environment.ExpandEnvironmentVariables(@"DataSource=%HOME%/Repos/returns/uni/returns-api/Resources/Databases/mock.db;Mode=ReadWrite"),
             o => o.UseRelationalNulls()
         );
 

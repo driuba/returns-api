@@ -13,6 +13,16 @@ public interface IReturnService
 
     Task<ValueResponse<ReturnEstimated>> EstimateAsync(Return returnCandidate);
 
+    Task<IEnumerable<InvoiceLineReturnable>> FilterInvoiceLinesReturnableAsync(
+        string deliveryPointId,
+        DateTime? from,
+        string? productId,
+        string? search,
+        int? skip,
+        DateTime? to,
+        int? top
+    );
+
     Task<ValueResponse<Domain.Entities.Return>> MergeAsync(ReturnEstimated returnCandidate);
 
     Task<ValueResponse<Entities.Return>> UpdateAsync(Entities.Return returnCandidate);

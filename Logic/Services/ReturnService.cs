@@ -219,6 +219,83 @@ public class ReturnService : IReturnService
         return new ValueResponse<ReturnEstimated> { Success = true, Value = _returnFeeService.Calculate(returnEstimated, invoiceLines) };
     }
 
+    public async Task<IEnumerable<InvoiceLineReturnable>> FilterInvoiceLinesReturnableAsync(
+        string deliveryPointId,
+        DateTime? from,
+        string? productId,
+        string? search,
+        int? skip,
+        DateTime? to,
+        int? top
+    )
+    {
+        var deliveryPoint = await _customerService.GetDeliveryPointAsync(deliveryPointId);
+
+        if (deliveryPoint is null)
+        {
+            return Enumerable.Empty < InvoiceLineReturnable>();
+        }
+
+        var invoiceLines = await _invoiceService
+            .FilterLinesAsync(deliveryPoint.CustomerId, from, productId, search, skip, to, top)
+            .ToListAsync();
+
+        if (!invoiceLines.Any())
+        {
+            return Enumerable.Empty<InvoiceLineReturnable>();
+        }
+
+        var invoiceNumbers = invoiceLines
+            .Select(il => il.InvoiceNumber)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        var productIds = invoiceLines
+            .Select(il => il.ProductId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var quantitiesReturned = await _dbContext
+            .Set<Domain.Entities.ReturnLine>()
+            .Where(rl => invoiceNumbers.Contains(rl.InvoiceNumberPurchase))
+            .Where(rl => productIds.Contains(rl.ProductId))
+            .GroupBy(rl => new { rl.InvoiceNumberPurchase, rl.ProductId, rl.SerialNumber })
+            .Select(g => new { g.Key.InvoiceNumberPurchase, g.Key.ProductId, g.Key.SerialNumber, Quantity = g.Sum(rl => rl.Quantity) })
+            .ToDictionaryAsync(
+                g => (g.InvoiceNumberPurchase, g.ProductId, g.SerialNumber),
+                g => g.Quantity,
+                new ValueTupleEqualityComparer<string, string, string?>(
+                    StringComparer.OrdinalIgnoreCase,
+                    StringComparer.OrdinalIgnoreCase,
+                    StringComparer.OrdinalIgnoreCase
+                )
+            );
+
+        var products = await _productService.FilterAsync(productIds);
+
+        return invoiceLines
+            .Join(
+                products,
+                il => il.ProductId,
+                p => p.Id,
+                (il, p) => _mapper.Map<InvoiceLineReturnable>(
+                    il,
+                    moo =>
+                    {
+                        moo.Items["byOrderOnly"] = p.ByOrderOnly;
+                        moo.Items["productName"] = p.Name;
+
+                        moo.Items["quantityReturned"] =
+                            quantitiesReturned.TryGetValue((il.InvoiceNumber, il.ProductId, il.SerialNumber), out var quantityReturned)
+                                ? quantityReturned
+                                : 0;
+
+                        moo.Items["serviceable"] = p.Serviceable;
+                    }),
+                StringComparer.OrdinalIgnoreCase
+            )
+            .ToList();
+    }
+
     public async Task<ValueResponse<Domain.Entities.Return>> MergeAsync(ReturnEstimated returnCandidate)
     {
         if (!returnCandidate.Id.HasValue)

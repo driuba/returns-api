@@ -22,6 +22,11 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasMaxLength(10);
 
         builder
+            .Property(p => p.Name)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder
             .Property(p => p.Serviceable)
             .IsRequired();
     }

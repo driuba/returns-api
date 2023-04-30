@@ -6,9 +6,70 @@ public sealed class LogicProfile : AutoMapper.Profile
 {
     public LogicProfile()
     {
+        MapInvoiceLineReturnable();
         MapReturnEntity();
         MapReturnEstimated();
         MapReturnValidated();
+    }
+
+    private void MapInvoiceLineReturnable()
+    {
+        CreateMap<Domain.Dto.Invoices.InvoiceLine, InvoiceLineReturnable>()
+            .ConstructUsing((src, ctx) =>
+            {
+                if (!(ctx.Items.TryGetValue("productName", out var item) && item is string productName))
+                {
+                    throw new InvalidOperationException("Product name is required.");
+                }
+
+                return new InvoiceLineReturnable(src.InvoiceNumber, src.ProductId, productName);
+            })
+            .ForMember(
+                ilr => ilr.ByOrderOnly,
+                mce => mce.MapFrom(
+                    (_, _, _, ctx) =>
+                    {
+                        if (!(ctx.Items.TryGetValue("byOrderOnly", out var item) && item is bool byOrderOnly))
+                        {
+                            throw new InvalidOperationException("By order only flag is required.");
+                        }
+
+                        return byOrderOnly;
+                    }
+                )
+            )
+            .ForMember(
+                ilr => ilr.QuantityInvoiced,
+                mce => mce.MapFrom(src => src.Quantity)
+            )
+            .ForMember(
+                ilr => ilr.QuantityReturned,
+                mce => mce.MapFrom(
+                    (_, _, _, ctx) =>
+                    {
+                        if (!(ctx.Items.TryGetValue("quantityReturned", out var item) && item is int quantityReturned))
+                        {
+                            throw new InvalidOperationException("Returned quantity is required.");
+                        }
+
+                        return quantityReturned;
+                    }
+                )
+            )
+            .ForMember(
+                ilr => ilr.Serviceable,
+                mce => mce.MapFrom(
+                    (_, _, _, ctx) =>
+                    {
+                        if (!(ctx.Items.TryGetValue("serviceable", out var item) && item is bool serviceable))
+                        {
+                            throw new InvalidOperationException("Serviceability flag is required.");
+                        }
+
+                        return serviceable;
+                    }
+                )
+            );
     }
 
     private void MapReturnEntity()

@@ -48,6 +48,14 @@ internal static class ODataOptionsExtensions
 
         function.ReturnsFromEntitySet<ReturnAvailability>("returnAvailabilities");
 
+        action = builder.Action("filterInvoiceLines");
+
+        action
+            .Parameter<FilterInvoiceLinesRequest>("request")
+            .Required();
+
+        action.ReturnsCollection<Domain.Dto.InvoiceLineReturnable>();
+
         return builder.GetEdmModel();
     }
 }

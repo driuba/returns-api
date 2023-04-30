@@ -32,6 +32,7 @@ public class CompaniesController : ControllerBase
                     .Set<CompanyCustomer>()
                     .Where(cc => cc.CustomerId == _sessionService.CustomerId)
                     .Select(cc => cc.Company)
+                    .Select(c => new { c.Id })
                     .ToListAsync()
             );
         }
@@ -39,6 +40,7 @@ public class CompaniesController : ControllerBase
         return Ok(
             await _dbContext
                 .Set<Company>()
+                .Select(c => new { c.Id })
                 .ToListAsync()
         );
     }

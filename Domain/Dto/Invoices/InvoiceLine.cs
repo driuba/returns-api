@@ -11,6 +11,8 @@ public class InvoiceLine
 
     public string CustomerId { get; init; }
 
+    public int Id { get; init; }
+
     public DateTime InvoiceDate { get; init; }
 
     public string InvoiceNumber { get; init; }

@@ -26,7 +26,7 @@ public class ProductService : IProductService
         return await _dbContext
             .Set<Domain.Mock.Product>()
             .Where(p => ids.Contains(p.Id))
-            .Select(p => new Product(p.Id)
+            .Select(p => new Product(p.Id, p.Name)
             {
                 ByOrderOnly = p.ByOrderOnly,
                 Serviceable = p.Serviceable
