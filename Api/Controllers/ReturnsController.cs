@@ -31,6 +31,21 @@ public class ReturnsController : ControllerBase
         _sessionService = sessionService;
     }
 
+    [HttpPost("returns({id:int})/approve")]
+    public async Task<IActionResult> Approve(string companyId, int id)
+    {
+        var response = await _returnService.ApproveAsync(id);
+
+        if (response.Success)
+        {
+            return NoContent();
+        }
+
+        return BadRequest(
+            _mapper.Map<Response>(response)
+        );
+    }
+
     [HttpDelete("returns({id:int})")]
     public async Task<IActionResult> Delete(string companyId, int id)
     {

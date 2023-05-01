@@ -55,6 +55,136 @@ public class ReturnService : IReturnService
         _storageService = storageService;
     }
 
+    public async Task<Response> ApproveAsync(int id)
+    {
+        var returnEntity = await _dbContext
+            .Set<Domain.Entities.Return>()
+            .Include(r => r.Fees)
+            .Include(r => r.Lines)
+            .ThenInclude(l => l.Attachments)
+            .Include(r => r.Lines)
+            .ThenInclude(l => l.Fees)
+            .ThenInclude(f => f.Configuration)
+            .ThenInclude(c => c.Group)
+            .SingleOrDefaultAsync(r => r.Id == id);
+
+        if (returnEntity is null)
+        {
+            return new Response { Message = $"Return {id} was not found." };
+        }
+
+        if (returnEntity.State != ReturnState.New)
+        {
+            return new Response { Message = $"Only returns of state {ReturnState.New} can be approved, current state: {returnEntity.State}." };
+        }
+
+        var deliveryPoint = await _customerService.GetDeliveryPointAsync(returnEntity.DeliveryPointId);
+
+        if (deliveryPoint is null)
+        {
+            return new Response { Message = $"Delivery point {returnEntity.DeliveryPointId} was not found." };
+        }
+
+        var country = await _regionService.GetCountryAsync(deliveryPoint.CountryId);
+
+        var invoiceLines = await _invoiceService
+            .FilterLinesAsync(
+                returnEntity.CustomerId,
+                returnEntity.Lines
+                    .Select(l => l.InvoiceNumberPurchase)
+                    .Distinct(),
+                returnEntity.Lines
+                    .Select(l => l.ProductId)
+                    .Distinct()
+            )
+            .ToListAsync();
+
+        var returnCandidate = _mapper.Map<Return>(returnEntity);
+
+        var returnValidated = await ValidateAsync(
+            returnCandidate,
+            country,
+            deliveryPoint,
+            invoiceLines,
+            validateAttachments: false
+        );
+
+        if (returnValidated.Messages.Any() || returnValidated.Lines.Any(l => l.Messages.Any()))
+        {
+            return new Response
+            {
+                Message = "One or more validation errors have occured.",
+                Messages = returnValidated.Messages.Union(
+                    returnValidated.Lines.SelectMany(
+                        l => l.Messages,
+                        (l, m) => $"Line {l.Reference}: {m}"
+                    )
+                )
+            };
+        }
+
+        var returnEstimated = _returnFeeService.Calculate(
+            await _returnFeeService.ResolveAsync(
+                returnValidated,
+                deliveryPoint,
+                country,
+                invoiceLines
+            ),
+            invoiceLines
+        );
+
+        var feesEstimated = returnEstimated.Fees
+            .Select(f => new { f.Value, FeeConfigurationId = f.Configuration.Id, ReturnLineId = default(int?) })
+            .Concat(
+                returnEstimated.Lines.SelectMany(
+                    l => l.Fees,
+                    (l, f) => new { f.Value, FeeConfigurationId = f.Configuration.Id, ReturnLineId = l.Id }
+                )
+            )
+            .ToDictionary(
+                f => (f.FeeConfigurationId, f.ReturnLineId),
+                f => f.Value
+            );
+
+        if
+        (
+            returnEntity.Fees.Count != feesEstimated.Count ||
+            returnEntity.Fees.Any(f => !(
+                feesEstimated.TryGetValue((f.FeeConfigurationId, f.ReturnLineId), out var fee) &&
+                fee == f.Value
+            ))
+        )
+        {
+            var response = await MergeAsync(returnEstimated);
+
+            if (!response.Success)
+            {
+                return new Response { Message = response.Message, Messages = response.Messages };
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            return new Response { Message = "Return fees have changed." };
+        }
+
+        returnEntity = await _dbContext
+            .Set<Domain.Entities.Return>()
+            .AsTracking()
+            .Include(r => r.Lines)
+            .SingleAsync(r => r.Id == returnEntity.Id);
+
+        returnEntity.State = ReturnState.Registered;
+
+        foreach (var line in returnEntity.Lines)
+        {
+            line.State = ReturnState.Registered;
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        return new Response { Success = true };
+    }
+
     public async Task<ValueResponse<Domain.Entities.Return>> CreateAsync(Return returnCandidate)
     {
         var deliveryPoint = await _customerService.GetDeliveryPointAsync(returnCandidate.DeliveryPointId);
@@ -90,9 +220,12 @@ public class ReturnService : IReturnService
         {
             return new ValueResponse<Domain.Entities.Return>
             {
-                Message = "One or more validation errors occured.",
+                Message = "One or more validation errors have occured.",
                 Messages = returnValidated.Messages.Union(
-                    returnValidated.Lines.Select(l => $"Line {l.Reference}: {l.Messages}")
+                    returnValidated.Lines.SelectMany(
+                        l => l.Messages,
+                        (l, m) => $"Line {l.Reference}: {m}"
+                    )
                 )
             };
         }

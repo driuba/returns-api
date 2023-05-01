@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using Returns.Domain.Api;
+using Returns.Domain.Constants;
 using Returns.Domain.Services;
 using Returns.Logic.Repositories;
 
@@ -16,12 +17,19 @@ public class ReturnLinesController : ControllerBase
     private readonly ReturnDbContext _dbContext;
     private readonly IMapper _mapper;
     private readonly IReturnLineService _returnLineService;
+    private readonly ISessionService _sessionService;
 
-    public ReturnLinesController(ReturnDbContext dbContext, IMapper mapper, IReturnLineService returnLineService)
+    public ReturnLinesController(
+        ReturnDbContext dbContext,
+        IMapper mapper,
+        IReturnLineService returnLineService,
+        ISessionService sessionService
+    )
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _returnLineService = returnLineService;
+        _sessionService = sessionService;
     }
 
     [HttpDelete("returns({returnId:int})/lines({returnLineId:int})")]
@@ -70,9 +78,15 @@ public class ReturnLinesController : ControllerBase
     }
 
     [HttpPost("returns({returnId:int})/lines")]
-    public async Task<IActionResult> Post(string companyId, int returnId, ReturnLineRequest request)
+    public async Task<IActionResult> Post(string companyId, int returnId, ReturnLinesRequest request)
     {
-        var response = await _returnLineService.CreateAsync(returnId, _mapper.Map<Domain.Dto.ReturnLine>(request));
+        var response = await _returnLineService.CreateAsync(
+            returnId,
+            _mapper.Map<IEnumerable<Domain.Dto.ReturnLine>>(
+                request.Lines,
+                moo => moo.Items["applyRegistrationFee"] = _sessionService.Principal.IsInRole(Roles.Admin)
+            )
+        );
 
         if (response.Success)
         {

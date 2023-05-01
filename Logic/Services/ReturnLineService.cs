@@ -40,8 +40,15 @@ public class ReturnLineService : IReturnLineService
         _storageService = storageService;
     }
 
-    public async Task<ValueResponse<Domain.Entities.ReturnLine>> CreateAsync(int returnId, ReturnLine returnLineCandidate)
+    public async Task<ValueResponse<IEnumerable<Domain.Entities.ReturnLine>>> CreateAsync(int returnId, IEnumerable<ReturnLine> returnLinesCandidate)
     {
+        returnLinesCandidate = returnLinesCandidate.ToList();
+
+        if (!returnLinesCandidate.Any())
+        {
+            return new ValueResponse<IEnumerable<Domain.Entities.ReturnLine>> { Message = "At least one return line is required." };
+        }
+
         var returnEntity = await _dbContext
             .Set<Domain.Entities.Return>()
             .Include(r => r.Lines)
@@ -52,15 +59,12 @@ public class ReturnLineService : IReturnLineService
 
         if (returnEntity is null)
         {
-            return new ValueResponse<Domain.Entities.ReturnLine>
-            {
-                Message = $"Return {returnId} was not found."
-            };
+            return new ValueResponse<IEnumerable<Domain.Entities.ReturnLine>> { Message = $"Return {returnId} was not found." };
         }
 
         if (returnEntity.State != ReturnState.New)
         {
-            return new ValueResponse<Domain.Entities.ReturnLine>
+            return new ValueResponse<IEnumerable<Domain.Entities.ReturnLine>>
             {
                 Message = $"Only returns of state {ReturnState.New} can be edited, current state: {returnEntity.State}."
             };
@@ -70,7 +74,7 @@ public class ReturnLineService : IReturnLineService
 
         if (deliveryPoint is null)
         {
-            return new ValueResponse<Domain.Entities.ReturnLine>
+            return new ValueResponse<IEnumerable<Domain.Entities.ReturnLine>>
             {
                 Message = $"Delivery point {returnEntity.DeliveryPointId} was not found."
             };
@@ -81,7 +85,7 @@ public class ReturnLineService : IReturnLineService
         var returnCandidate = _mapper.Map<Return>(returnEntity);
 
         returnCandidate.Lines = returnCandidate.Lines
-            .Append(returnLineCandidate)
+            .Concat(returnLinesCandidate)
             .ToList();
 
         var invoiceLines = await _invoiceService
@@ -106,11 +110,14 @@ public class ReturnLineService : IReturnLineService
 
         if (returnValidated.Messages.Any() || returnValidated.Lines.Any(l => l.Messages.Any()))
         {
-            return new ValueResponse<Domain.Entities.ReturnLine>
+            return new ValueResponse<IEnumerable<Domain.Entities.ReturnLine>>
             {
                 Message = "One or more validation errors occured.",
                 Messages = returnValidated.Messages.Union(
-                    returnValidated.Lines.Select(l => $"Line {l.Reference}: {l.Messages}")
+                    returnValidated.Lines.SelectMany(
+                        l => l.Messages,
+                        (l, m) => $"Line {l.Reference}: {m}"
+                    )
                 )
             };
         }
@@ -123,22 +130,14 @@ public class ReturnLineService : IReturnLineService
 
         if (response is not { Success: true, Value: not null })
         {
-            return new ValueResponse<Domain.Entities.ReturnLine>
-            {
-                Message = response.Message,
-                Messages = response.Messages
-            };
+            return new ValueResponse<IEnumerable<Domain.Entities.ReturnLine>> { Message = response.Message, Messages = response.Messages };
         }
 
-        var returnLine = response.Value.Lines.Single(l => l.Id == 0);
+        var returnLines = response.Value.Lines.Where(l => l.Id == 0);
 
         await _dbContext.SaveChangesAsync();
 
-        return new ValueResponse<Domain.Entities.ReturnLine>
-        {
-            Success = true,
-            Value = returnLine
-        };
+        return new ValueResponse<IEnumerable<Domain.Entities.ReturnLine>> { Success = true, Value = returnLines };
     }
 
     public async Task<ValueResponse<Domain.Entities.ReturnLine>> DeleteAsync(int returnId, int returnLineId)
@@ -155,10 +154,7 @@ public class ReturnLineService : IReturnLineService
 
         if (returnEntity is null)
         {
-            return new ValueResponse<Domain.Entities.ReturnLine>
-            {
-                Message = $"Return {returnId} was not found."
-            };
+            return new ValueResponse<Domain.Entities.ReturnLine> { Message = $"Return {returnId} was not found." };
         }
 
         if (returnEntity.State != ReturnState.New)
@@ -173,10 +169,7 @@ public class ReturnLineService : IReturnLineService
 
         if (returnLine is null)
         {
-            return new ValueResponse<Domain.Entities.ReturnLine>
-            {
-                Message = $"Return {returnId} line {returnLineId} was not found."
-            };
+            return new ValueResponse<Domain.Entities.ReturnLine> { Message = $"Return {returnId} line {returnLineId} was not found." };
         }
 
         var storageIds = returnLine.Attachments
@@ -190,11 +183,7 @@ public class ReturnLineService : IReturnLineService
 
             if (!response.Success)
             {
-                return new ValueResponse<Domain.Entities.ReturnLine>
-                {
-                    Message = response.Message,
-                    Messages = response.Messages
-                };
+                return new ValueResponse<Domain.Entities.ReturnLine> { Message = response.Message, Messages = response.Messages };
             }
         }
 
@@ -202,6 +191,15 @@ public class ReturnLineService : IReturnLineService
 
         if (returnEntity.Lines.Any())
         {
+            var deliveryPoint = await _customerService.GetDeliveryPointAsync(returnEntity.DeliveryPointId);
+
+            if (deliveryPoint is null)
+            {
+                return new ValueResponse<Domain.Entities.ReturnLine> { Message = $"Delivery point {returnEntity.DeliveryPointId} was not found." };
+            }
+
+            var country = await _regionService.GetCountryAsync(deliveryPoint.CountryId);
+
             var invoiceLines = await _invoiceService
                 .FilterLinesAsync(
                     returnEntity.CustomerId,
@@ -214,7 +212,12 @@ public class ReturnLineService : IReturnLineService
                 )
                 .ToListAsync();
 
-            var returnEstimated = _mapper.Map<ReturnEstimated>(returnEntity);
+            var returnEstimated = await _returnFeeService.ResolveAsync(
+                _mapper.Map<ReturnValidated>(returnEntity),
+                deliveryPoint,
+                country,
+                invoiceLines
+            );
 
             var response = await _returnService.MergeAsync(
                 _returnFeeService.Calculate(returnEstimated, invoiceLines)
@@ -222,11 +225,7 @@ public class ReturnLineService : IReturnLineService
 
             if (!response.Success)
             {
-                return new ValueResponse<Domain.Entities.ReturnLine>
-                {
-                    Message = response.Message,
-                    Messages = response.Messages
-                };
+                return new ValueResponse<Domain.Entities.ReturnLine> { Message = response.Message, Messages = response.Messages };
             }
         }
         else
@@ -238,11 +237,7 @@ public class ReturnLineService : IReturnLineService
 
         await _dbContext.SaveChangesAsync();
 
-        return new ValueResponse<Domain.Entities.ReturnLine>
-        {
-            Success = true,
-            Value = returnLine
-        };
+        return new ValueResponse<Domain.Entities.ReturnLine> { Success = true, Value = returnLine };
     }
 
     public async Task<ValueResponse<Domain.Entities.ReturnLine>> UpdateAsync(int returnId, ReturnLine returnLineCandidate)
@@ -257,10 +252,7 @@ public class ReturnLineService : IReturnLineService
 
         if (returnEntity is null)
         {
-            return new ValueResponse<Domain.Entities.ReturnLine>
-            {
-                Message = $"Return {returnId} was not found."
-            };
+            return new ValueResponse<Domain.Entities.ReturnLine> { Message = $"Return {returnId} was not found." };
         }
 
         if (returnEntity.State != ReturnState.New)
@@ -273,30 +265,26 @@ public class ReturnLineService : IReturnLineService
 
         if (returnEntity.Lines.All(l => l.Id != returnLineCandidate.Id))
         {
-            return new ValueResponse<Domain.Entities.ReturnLine>
-            {
-                Message = $"Return {returnId} line {returnLineCandidate.Id} was not found."
-            };
+            return new ValueResponse<Domain.Entities.ReturnLine> { Message = $"Return {returnId} line {returnLineCandidate.Id} was not found." };
         }
 
         var deliveryPoint = await _customerService.GetDeliveryPointAsync(returnEntity.DeliveryPointId);
 
         if (deliveryPoint is null)
         {
-            return new ValueResponse<Domain.Entities.ReturnLine>
-            {
-                Message = $"Delivery point {returnEntity.DeliveryPointId} was not found."
-            };
+            return new ValueResponse<Domain.Entities.ReturnLine> { Message = $"Delivery point {returnEntity.DeliveryPointId} was not found." };
         }
 
         var country = await _regionService.GetCountryAsync(deliveryPoint.CountryId);
 
         var returnCandidate = _mapper.Map<Return>(returnEntity);
 
-        returnCandidate.Lines = returnCandidate.Lines
-            .Where(l => l.Id != returnLineCandidate.Id)
-            .Append(returnLineCandidate)
-            .ToList();
+        var returnLineExisting = returnCandidate.Lines.Single(l => l.Id == returnLineCandidate.Id);
+
+        returnLineExisting.FeeConfigurationGroupIdDamagePackage = returnLineCandidate.FeeConfigurationGroupIdDamagePackage;
+        returnLineExisting.FeeConfigurationGroupIdDamageProduct = returnLineCandidate.FeeConfigurationGroupIdDamageProduct;
+        returnLineExisting.Note = returnLineCandidate.Note;
+        returnLineExisting.Quantity = returnLineCandidate.Quantity;
 
         var invoiceLines = await _invoiceService
             .FilterLinesAsync(
@@ -324,7 +312,10 @@ public class ReturnLineService : IReturnLineService
             {
                 Message = "One or more validation errors occured.",
                 Messages = returnValidated.Messages.Union(
-                    returnValidated.Lines.Select(l => $"Line {l.Reference}: {l.Messages}")
+                    returnValidated.Lines.SelectMany(
+                        l => l.Messages,
+                        (l, m) => $"Line {l.Reference}: {m}"
+                    )
                 )
             };
         }
@@ -337,21 +328,13 @@ public class ReturnLineService : IReturnLineService
 
         if (response is not { Success: true, Value: not null })
         {
-            return new ValueResponse<Domain.Entities.ReturnLine>
-            {
-                Message = response.Message,
-                Messages = response.Messages
-            };
+            return new ValueResponse<Domain.Entities.ReturnLine> { Message = response.Message, Messages = response.Messages };
         }
 
         var returnLine = response.Value.Lines.Single(l => l.Id == returnLineCandidate.Id);
 
         await _dbContext.SaveChangesAsync();
 
-        return new ValueResponse<Domain.Entities.ReturnLine>
-        {
-            Success = true,
-            Value = returnLine
-        };
+        return new ValueResponse<Domain.Entities.ReturnLine> { Success = true, Value = returnLine };
     }
 }

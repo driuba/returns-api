@@ -1,4 +1,5 @@
 using Returns.Domain.Dto;
+using Returns.Domain.Enums;
 
 namespace Returns.Logic.Mappings;
 
@@ -9,6 +10,7 @@ public sealed class LogicProfile : AutoMapper.Profile
         MapInvoiceLineReturnable();
         MapReturnEntity();
         MapReturnEstimated();
+        MapReturnDto();
         MapReturnValidated();
     }
 
@@ -226,9 +228,9 @@ public sealed class LogicProfile : AutoMapper.Profile
             )
         );
 
-        var returnMap = CreateMap<ReturnEstimated, ReturnEstimated>();
+        var returnMapEstimated = CreateMap<ReturnEstimated, ReturnEstimated>();
 
-        returnMap.ForMember(
+        returnMapEstimated.ForMember(
             re => re.Fees,
             mce => mce.MapFrom(
                 (_, _, _, ctx) =>
@@ -243,7 +245,7 @@ public sealed class LogicProfile : AutoMapper.Profile
             )
         );
 
-        returnMap.ForMember(
+        returnMapEstimated.ForMember(
             re => re.Lines,
             mce => mce.MapFrom(
                 (src, _, _, ctx) =>
@@ -258,9 +260,9 @@ public sealed class LogicProfile : AutoMapper.Profile
             )
         );
 
-        var returnLineMap = CreateMap<ReturnLineEstimated, ReturnLineEstimated>();
+        var returnLineMapEstimated = CreateMap<ReturnLineEstimated, ReturnLineEstimated>();
 
-        returnLineMap.ForMember(
+        returnLineMapEstimated.ForMember(
             rle => rle.Fees,
             mce => mce.MapFrom(
                 (src, _, _, ctx) =>
@@ -275,7 +277,7 @@ public sealed class LogicProfile : AutoMapper.Profile
             )
         );
 
-        returnLineMap.ForMember(
+        returnLineMapEstimated.ForMember(
             rle => rle.PriceUnit,
             mce => mce.MapFrom(
                 (src, _, _, ctx) =>
@@ -303,6 +305,59 @@ public sealed class LogicProfile : AutoMapper.Profile
                     return src.Value;
                 }
             )
+        );
+    }
+
+    private void MapReturnDto()
+    {
+        CreateMap<Domain.Entities.Return, Return>();
+
+        var returnLineMap = CreateMap<Domain.Entities.ReturnLine, ReturnLine>();
+
+        returnLineMap.ForMember(
+            rl => rl.ApplyRegistrationFee,
+            mce => mce.MapFrom(
+                src => src.Fees.Any(f => f.Configuration.Group.Type == FeeConfigurationGroupType.Registration)
+            )
+        );
+
+        returnLineMap.ForMember(
+            rl => rl.AttachmentIds,
+            mce => mce.MapFrom(
+                src => src.Attachments.Select(a => a.StorageId)
+            )
+        );
+
+        returnLineMap.ForMember(
+            rl => rl.FeeConfigurationGroupIdDamagePackage,
+            mce => mce.MapFrom(
+                src => src.Fees
+                    .Where(f => f.Configuration.Group.Type == FeeConfigurationGroupType.DamagePackage)
+                    .Select(f => f.Configuration.FeeConfigurationGroupId)
+                    .Cast<int?>()
+                    .SingleOrDefault()
+            )
+        );
+
+        returnLineMap.ForMember(
+            rl => rl.FeeConfigurationGroupIdDamageProduct,
+            mce => mce.MapFrom(
+                src => src.Fees
+                    .Where(f => f.Configuration.Group.Type == FeeConfigurationGroupType.DamageProduct)
+                    .Select(f => f.Configuration.FeeConfigurationGroupId)
+                    .Cast<int?>()
+                    .SingleOrDefault()
+            )
+        );
+
+        returnLineMap.ForCtorParam(
+            "invoiceNumber",
+            cpce => cpce.MapFrom(src => src.InvoiceNumberPurchase)
+        );
+
+        returnLineMap.ForCtorParam(
+            "reference",
+            cpce => cpce.MapFrom(src => src.Id.ToString())
         );
     }
 
@@ -336,6 +391,56 @@ public sealed class LogicProfile : AutoMapper.Profile
                     throw new InvalidOperationException("Return line errors are required.");
                 }
             )
+        );
+
+        CreateMap<Domain.Entities.Return, ReturnValidated>();
+
+        var returnLineMap = CreateMap<Domain.Entities.ReturnLine, ReturnLineValidated>();
+
+        returnLineMap.ForMember(
+            rl => rl.ApplyRegistrationFee,
+            mce => mce.MapFrom(
+                src => src.Fees.Any(f => f.Configuration.Group.Type == FeeConfigurationGroupType.Registration)
+            )
+        );
+
+        returnLineMap.ForMember(
+            rl => rl.AttachmentIds,
+            mce => mce.MapFrom(
+                src => src.Attachments.Select(a => a.StorageId)
+            )
+        );
+
+        returnLineMap.ForMember(
+            rl => rl.FeeConfigurationGroupIdDamagePackage,
+            mce => mce.MapFrom(
+                src => src.Fees
+                    .Where(f => f.Configuration.Group.Type == FeeConfigurationGroupType.DamagePackage)
+                    .Select(f => f.Configuration.FeeConfigurationGroupId)
+                    .Cast<int?>()
+                    .SingleOrDefault()
+            )
+        );
+
+        returnLineMap.ForMember(
+            rl => rl.FeeConfigurationGroupIdDamageProduct,
+            mce => mce.MapFrom(
+                src => src.Fees
+                    .Where(f => f.Configuration.Group.Type == FeeConfigurationGroupType.DamageProduct)
+                    .Select(f => f.Configuration.FeeConfigurationGroupId)
+                    .Cast<int?>()
+                    .SingleOrDefault()
+            )
+        );
+
+        returnLineMap.ForCtorParam(
+            "invoiceNumber",
+            cpce => cpce.MapFrom(src => src.InvoiceNumberPurchase)
+        );
+
+        returnLineMap.ForCtorParam(
+            "reference",
+            cpce => cpce.MapFrom(src => src.Id.ToString())
         );
     }
 }

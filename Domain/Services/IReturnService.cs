@@ -7,6 +7,8 @@ namespace Returns.Domain.Services;
 
 public interface IReturnService
 {
+    Task<Response> ApproveAsync(int id);
+
     Task<ValueResponse<Entities.Return>> CreateAsync(Return returnCandidate);
 
     Task<ValueResponse<Entities.Return>> DeleteAsync(int id);

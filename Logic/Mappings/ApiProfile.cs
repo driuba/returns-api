@@ -14,12 +14,29 @@ public sealed class ApiProfile : AutoMapper.Profile
     {
         CreateMap<Domain.Api.ReturnRequest, Domain.Dto.Return>();
 
-        CreateMap<Domain.Api.ReturnLineRequest, Domain.Dto.ReturnLine>().ForMember(
+        var returnLineMap = CreateMap<Domain.Api.ReturnLineRequest, Domain.Dto.ReturnLine>();
+
+        returnLineMap.ForMember(
             rl => rl.ApplyRegistrationFee,
             mce => mce.MapFrom(
                 (_, _, _, ctx) =>
                     ctx.Items.TryGetValue("applyRegistrationFee", out var item) &&
                     item is true
+            )
+        );
+
+        returnLineMap.ForMember(
+            rl => rl.Id,
+            mce => mce.MapFrom(
+                (_, _, _, ctx) =>
+                {
+                    if (ctx.Items.TryGetValue("returnLineId", out var item) && item is int returnLineId)
+                    {
+                        return returnLineId;
+                    }
+
+                    return default(int?);
+                }
             )
         );
 

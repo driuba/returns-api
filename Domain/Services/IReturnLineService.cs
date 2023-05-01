@@ -4,7 +4,7 @@ namespace Returns.Domain.Services;
 
 public interface IReturnLineService
 {
-    Task<ValueResponse<Entities.ReturnLine>> CreateAsync(int returnId, ReturnLine returnLineCandidate);
+    Task<ValueResponse<IEnumerable<Entities.ReturnLine>>> CreateAsync(int returnId, IEnumerable<ReturnLine> returnLinesCandidate);
 
     Task<ValueResponse<Entities.ReturnLine>> DeleteAsync(int returnId, int returnLineId);
 
