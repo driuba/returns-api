@@ -27,8 +27,8 @@ public class ProductsController : ControllerBase
                 .Set<Product>()
                 .Where(p =>
                     string.IsNullOrEmpty(search) ||
-                    EF.Functions.Like(p.Id, $"%{search}%") ||
-                    EF.Functions.Like(p.Name, $"%{search}%")
+                    p.Id.Contains(search) ||
+                    p.Name.Contains(search)
                 )
                 .Select(p => new { p.Id, p.Name })
                 .ToListAsync()

@@ -64,8 +64,8 @@ public class CustomersController : ControllerBase
                 .Where(c => !parent || string.IsNullOrEmpty(c.ParentId))
                 .Where(c =>
                     string.IsNullOrEmpty(search) ||
-                    EF.Functions.Like(c.Id, $"%{search}%") ||
-                    EF.Functions.Like(c.Name, $"%{search}%")
+                    c.Id.Contains(search) ||
+                    c.Name.Contains(search)
                 )
                 .Select(c => new { c.Id, c.Name, c.ParentId })
                 .ToListAsync()

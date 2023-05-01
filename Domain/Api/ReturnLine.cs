@@ -5,19 +5,13 @@ namespace Returns.Domain.Api;
 
 public sealed class ReturnLine : TrackableBase
 {
-    public ReturnLine(string invoiceNumberPurchase, string productId)
-    {
-        InvoiceNumberPurchase = invoiceNumberPurchase;
-        ProductId = productId;
-    }
-
     [ReadOnly(true)] public IEnumerable<ReturnLineAttachment> Attachments { get; init; } = default!;
 
     [ReadOnly(true)] public IEnumerable<ReturnFee> Fees { get; init; } = default!;
 
     [ReadOnly(true)] public int Id { get; init; }
 
-    public string InvoiceNumberPurchase { get; init; }
+    public string InvoiceNumberPurchase { get; init; } = default!;
 
     public string? InvoiceNumberReturn { get; init; }
 
@@ -27,7 +21,7 @@ public sealed class ReturnLine : TrackableBase
 
     public decimal PriceUnit { get; init; }
 
-    public string ProductId { get; init; }
+    public string ProductId { get; init; } = default!;
 
     public ReturnProductType ProductType { get; init; }
 

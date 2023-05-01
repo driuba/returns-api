@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Returns.Logic.Mock.Repositories.Configurations;
+using Returns.Logic.Repositories;
 
 namespace Returns.Logic.Mock.Repositories;
 
@@ -24,6 +25,8 @@ public sealed class MockDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+
+        optionsBuilder.AddInterceptors(new SqliteConnectionInterceptor());
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

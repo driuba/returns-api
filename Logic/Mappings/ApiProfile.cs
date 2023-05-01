@@ -19,8 +19,7 @@ public sealed class ApiProfile : AutoMapper.Profile
             mce => mce.MapFrom(
                 (_, _, _, ctx) =>
                     ctx.Items.TryGetValue("applyRegistrationFee", out var item) &&
-                    item is bool applyRegistrationFee &&
-                    applyRegistrationFee
+                    item is true
             )
         );
 

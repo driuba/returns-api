@@ -99,10 +99,10 @@ public class InvoiceService : IInvoiceService
         if (!string.IsNullOrEmpty(search))
         {
             query = query.Where(il =>
-                EF.Functions.Like(il.Invoice.Number, $"%{search}%") ||
+                il.Invoice.Number.Contains(search) ||
                 (
                     !string.IsNullOrEmpty(il.SerialNumber) &&
-                    EF.Functions.Like(il.SerialNumber, $"%{search}%")
+                    il.SerialNumber.Contains(search)
                 )
             );
         }

@@ -3,7 +3,7 @@
 public enum ReturnState
 {
     New = 0,
-    Declined = 10,
-    Registered = 20,
+    Registered = 10,
+    Declined = 20,
     Invoiced = 30
 }
