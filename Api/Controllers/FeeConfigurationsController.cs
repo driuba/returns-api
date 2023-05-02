@@ -12,7 +12,7 @@ using Returns.Logic.Repositories;
 
 namespace Returns.Api.Controllers;
 
-[Authorize(AuthorizationsPolicies.Admin)]
+[Authorize(AuthorizationPolicies.Admin)]
 public class FeeConfigurationsController : ControllerBase
 {
     private readonly ReturnDbContext _dbContext;

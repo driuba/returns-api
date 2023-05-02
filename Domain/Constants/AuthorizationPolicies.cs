@@ -1,6 +1,6 @@
 namespace Returns.Domain.Constants;
 
-public class AuthorizationsPolicies
+public class AuthorizationPolicies
 {
     public const string Admin = "Admin";
 

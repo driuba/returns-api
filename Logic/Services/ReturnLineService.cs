@@ -140,6 +140,90 @@ public class ReturnLineService : IReturnLineService
         return new ValueResponse<IEnumerable<Domain.Entities.ReturnLine>> { Success = true, Value = returnLines };
     }
 
+    public async Task<Response> DeclineAsync(int returnId, IEnumerable<int> returnLineIds, string note)
+    {
+        returnLineIds = returnLineIds.ToList();
+
+        if (!returnLineIds.Any())
+        {
+            return new Response { Message = "At least one return line identifier is required." };
+        }
+
+        var returnEntity = await _dbContext
+            .Set<Domain.Entities.Return>()
+            .AsTracking()
+            .Include(r => r.Lines)
+            .SingleOrDefaultAsync(r => r.Id == returnId);
+
+        if (returnEntity is null)
+        {
+            return new Response { Message = $"Return {returnId} was not found." };
+        }
+
+        if (returnEntity.State != ReturnState.Registered)
+        {
+            return new Response { Message = $"Only returns of state {ReturnState.Registered} can be edited, current state: {returnEntity.State}." };
+        }
+
+        var returnLineIdsMissing = returnLineIds
+            .Except(
+                returnEntity.Lines.Select(l => l.Id)
+            )
+            .ToList();
+
+        if (returnLineIdsMissing.Any())
+        {
+            return new Response
+            {
+                Message = "One or more return lines were not found.",
+                Messages = returnLineIdsMissing.Select(rli => $"Return line {rli} was not found.")
+            };
+        }
+
+        var returnLines = returnEntity.Lines
+            .IntersectBy(returnLineIds, l => l.Id)
+            .ToList();
+
+        if (returnLines.Any(rl => rl.State != ReturnLineState.Registered))
+        {
+            return new Response
+            {
+                Message = "One or more lines are in invalid state.",
+                Messages = returnLines
+                    .Where(rl => rl.State != ReturnLineState.Registered)
+                    .Select(rl =>
+                        $"Return line {rl.Id} state {rl.State} is not valid for declining, return line must be in {ReturnLineState.Registered} state."
+                    )
+            };
+        }
+
+        foreach (var returnLine in returnLines)
+        {
+            returnLine.NoteResponse = note;
+            returnLine.State = ReturnLineState.Declined;
+        }
+
+        if (returnEntity.Lines.All(rl => rl.State != ReturnLineState.Registered))
+        {
+            if (returnEntity.Lines.All(rl => rl.State == ReturnLineState.Declined))
+            {
+                returnEntity.State = ReturnState.Declined;
+            }
+            else if (returnEntity.Lines.All(rl => rl.State == ReturnLineState.Invoiced))
+            {
+                returnEntity.State = ReturnState.Invoiced;
+            }
+            else
+            {
+                returnEntity.State = ReturnState.InvoicedPartially;
+            }
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        return new Response { Success = true };
+    }
+
     public async Task<ValueResponse<Domain.Entities.ReturnLine>> DeleteAsync(int returnId, int returnLineId)
     {
         var returnEntity = await _dbContext
@@ -238,6 +322,90 @@ public class ReturnLineService : IReturnLineService
         await _dbContext.SaveChangesAsync();
 
         return new ValueResponse<Domain.Entities.ReturnLine> { Success = true, Value = returnLine };
+    }
+
+    public async Task<Response> InvoiceAsync(int returnId, IEnumerable<int> returnLineIds)
+    {
+        returnLineIds = returnLineIds.ToList();
+
+        if (!returnLineIds.Any())
+        {
+            return new Response { Message = "At least one return line identifier is required." };
+        }
+
+        var returnEntity = await _dbContext
+            .Set<Domain.Entities.Return>()
+            .AsTracking()
+            .Include(r => r.Lines)
+            .SingleOrDefaultAsync(r => r.Id == returnId);
+
+        if (returnEntity is null)
+        {
+            return new Response { Message = $"Return {returnId} was not found." };
+        }
+
+        if (returnEntity.State != ReturnState.Registered)
+        {
+            return new Response { Message = $"Only returns of state {ReturnState.Registered} can be edited, current state: {returnEntity.State}." };
+        }
+
+        var returnLineIdsMissing = returnLineIds
+            .Except(
+                returnEntity.Lines.Select(l => l.Id)
+            )
+            .ToList();
+
+        if (returnLineIdsMissing.Any())
+        {
+            return new Response
+            {
+                Message = "One or more return lines were not found.",
+                Messages = returnLineIdsMissing.Select(rli => $"Return line {rli} was not found.")
+            };
+        }
+
+        var returnLines = returnEntity.Lines
+            .IntersectBy(returnLineIds, l => l.Id)
+            .ToList();
+
+        if (returnLines.Any(rl => rl.State != ReturnLineState.Registered))
+        {
+            return new Response
+            {
+                Message = "One or more lines are in invalid state.",
+                Messages = returnLines
+                    .Where(rl => rl.State != ReturnLineState.Registered)
+                    .Select(rl =>
+                        $"Return line {rl.Id} state {rl.State} is not valid for invoicing, return line must be in {ReturnLineState.Registered} state."
+                    )
+            };
+        }
+
+        foreach (var returnLine in returnLines)
+        {
+            returnLine.InvoiceNumberReturn = returnLine.Id.ToString("D10"); // MOCK
+            returnLine.State = ReturnLineState.Invoiced;
+        }
+
+        if (returnEntity.Lines.All(rl => rl.State != ReturnLineState.Registered))
+        {
+            if (returnEntity.Lines.All(rl => rl.State == ReturnLineState.Declined))
+            {
+                returnEntity.State = ReturnState.Declined;
+            }
+            else if (returnEntity.Lines.All(rl => rl.State == ReturnLineState.Invoiced))
+            {
+                returnEntity.State = ReturnState.Invoiced;
+            }
+            else
+            {
+                returnEntity.State = ReturnState.InvoicedPartially;
+            }
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        return new Response { Success = true };
     }
 
     public async Task<ValueResponse<Domain.Entities.ReturnLine>> UpdateAsync(int returnId, ReturnLine returnLineCandidate)

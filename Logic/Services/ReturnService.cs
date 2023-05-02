@@ -177,7 +177,7 @@ public class ReturnService : IReturnService
 
         foreach (var line in returnEntity.Lines)
         {
-            line.State = ReturnState.Registered;
+            line.State = ReturnLineState.Registered;
         }
 
         await _dbContext.SaveChangesAsync();
@@ -497,7 +497,10 @@ public class ReturnService : IReturnService
 
                     if (!leg.Any())
                     {
-                        return _mapper.Map<Domain.Entities.ReturnLine>(l);
+                        return _mapper.Map<Domain.Entities.ReturnLine>(
+                            l,
+                            moo => moo.Items["returnId"] = returnEntity.Id
+                        );
                     }
 
                     var returnLineExisting = leg.First();
@@ -701,6 +704,7 @@ public class ReturnService : IReturnService
                     Lines = r.Lines
                         // ReSharper disable once AccessToModifiedClosure
                         .Where(l => !returnLineIdsExcluded.Contains(l.Id))
+                        .Where(l => l.State != ReturnLineState.Declined)
                         .Select(l => new { l.ProductType, l.Quantity })
                 })
                 .SingleOrDefaultAsync();
@@ -1052,6 +1056,7 @@ public class ReturnService : IReturnService
             .Where(rl => !returnLineIdsExcluded.Contains(rl.Id))
             .Where(rl => invoiceNumbers.Contains(rl.InvoiceNumberPurchase))
             .Where(rl => productIds.Contains(rl.ProductId))
+            .Where(rl => rl.State != ReturnLineState.Declined)
             .GroupBy(rl => new { rl.InvoiceNumberPurchase, rl.ProductId })
             .Select(g => new { g.Key.InvoiceNumberPurchase, g.Key.ProductId, Quantity = g.Sum(rl => rl.Quantity) })
             .ToListAsync();

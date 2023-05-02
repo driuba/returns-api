@@ -33,5 +33,5 @@ public sealed class ReturnLine : TrackableBase
 
     [ReadOnly(true)] public string? SerialNumber { get; init; }
 
-    [ReadOnly(true)] public ReturnState State { get; init; }
+    [ReadOnly(true)] public ReturnLineState State { get; init; }
 }

@@ -105,14 +105,14 @@ builder.Services.AddAuthorization(o =>
         .Build();
 
     o.AddPolicy(
-        AuthorizationsPolicies.Admin,
+        AuthorizationPolicies.Admin,
         b => b
             .RequireAuthenticatedUser()
             .RequireRole(Roles.Admin)
     );
 
     o.AddPolicy(
-        AuthorizationsPolicies.Reseller,
+        AuthorizationPolicies.Reseller,
         b => b
             .RequireAuthenticatedUser()
             .RequireRole(Roles.Reseller)

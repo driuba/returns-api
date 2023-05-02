@@ -28,6 +28,10 @@ internal static class ODataOptionsExtensions
             .EntityType<ReturnLineAttachment>()
             .HasKey(rla => rla.StorageId);
 
+        builder
+            .EntityType<Return>()
+            .Action("approve");
+
         var action = builder
             .EntityType<Return>().Collection
             .Action("estimate");
@@ -55,6 +59,16 @@ internal static class ODataOptionsExtensions
             .Required();
 
         action.ReturnsCollection<InvoiceLineReturnable>();
+
+        builder
+            .EntityType<ReturnLine>().Collection
+            .Action("decline")
+            .Parameter<DeclineReturnLinesRequest>("request");
+
+        builder
+            .EntityType<ReturnLine>().Collection
+            .Action("invoice")
+            .Parameter<InvoiceReturnLinesRequest>("request");
 
         return builder.GetEdmModel();
     }

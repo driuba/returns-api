@@ -2,6 +2,7 @@
 
 using AutoMapper;
 using AutoMapper.AspNet.OData;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,22 @@ public class ReturnLinesController : ControllerBase
         _mapper = mapper;
         _returnLineService = returnLineService;
         _sessionService = sessionService;
+    }
+
+    [Authorize(AuthorizationPolicies.Admin)]
+    [HttpPost("returns({returnId})/lines/decline")]
+    public async Task<IActionResult> Decline(string companyId, int returnId, DeclineReturnLinesRequest request)
+    {
+        var response = await _returnLineService.DeclineAsync(returnId, request.Ids, request.Note);
+
+        if (response.Success)
+        {
+            return NoContent();
+        }
+
+        return BadRequest(
+            _mapper.Map<Response>(response)
+        );
     }
 
     [HttpDelete("returns({returnId:int})/lines({returnLineId:int})")]
@@ -77,6 +94,22 @@ public class ReturnLinesController : ControllerBase
         return Ok(returnLine);
     }
 
+    [Authorize(AuthorizationPolicies.Admin)]
+    [HttpPost("returns({returnId:int})/lines/invoice")]
+    public async Task<IActionResult> Invoice(string companyId, int returnId, InvoiceReturnLinesRequest request)
+    {
+        var response = await _returnLineService.InvoiceAsync(returnId, request.Ids);
+
+        if (response.Success)
+        {
+            return NoContent();
+        }
+
+        return BadRequest(
+            _mapper.Map<Response>(response)
+        );
+    }
+
     [HttpPost("returns({returnId:int})/lines")]
     public async Task<IActionResult> Post(string companyId, int returnId, ReturnLinesRequest request)
     {
@@ -90,9 +123,7 @@ public class ReturnLinesController : ControllerBase
 
         if (response.Success)
         {
-            return Created(
-                _mapper.Map<ReturnLine>(response.Value)
-            );
+            return NoContent();
         }
 
         return BadRequest(
