@@ -634,22 +634,6 @@ public class ReturnService : IReturnService
             );
         }
 
-        if (errorsReturn.Any())
-        {
-            return _mapper.Map<ReturnValidated>(
-                returnCandidate,
-                moo =>
-                {
-                    moo.Items["errorsReturn"] = errorsReturn;
-                    moo.Items["errorsReturnLine"] = errorsReturnLine.ToLookup(
-                        erl => erl.Reference,
-                        erl => erl.Message,
-                        StringComparer.OrdinalIgnoreCase
-                    );
-                }
-            );
-        }
-
         IEnumerable<ReturnLine> returnLines = returnCandidate.Lines.ToList();
 
         var referencesDuplicated = returnLines
